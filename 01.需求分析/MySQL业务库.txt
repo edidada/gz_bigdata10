@@ -1,0 +1,15 @@
+Mysql-OLAP:
+106.75.33.59:3306
+
+hz_class03
+hz_class03_567
+
+
+-- 杭州的链接
+
+Mysql-OLAP:
+106.75.33.59:3306
+
+用户名: itcast_edu_stu
+密码: itcast_edu_stu
+
