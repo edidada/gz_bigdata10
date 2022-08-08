@@ -1,0 +1,3 @@
+sqoop抽取
+hive处理
+FinBI数据展示
