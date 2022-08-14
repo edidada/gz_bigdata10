@@ -1,0 +1,342 @@
+set hive.exec.dynamic.partition.mode=nonstrict
+WITH stud as
+(  
+    SELECT 
+        c.class_date as dateinfo,
+        c.class_id,
+        s.student_id,
+        s.signin_time,
+        t.morning_begin_time,
+        t.afternoon_begin_time,
+        t.evening_begin_time,
+        t.morning_end_time,
+        t.afternoon_end_time,
+        t.evening_end_time,
+        substr(c.class_date,1,4) as yearinfo,
+        substr(c.class_date,1,7) as monthinfo,
+        c.class_date as dayinfo
+from
+zxedu_ods.dim_course_table_upload_detail_dimen c
+LEFT JOIN zxedu_ods.dim_class_studying_student_count_dimen st
+on c.class_id = st.class_id
+LEFT JOIN zxedu_ods.dim_class_time_dimen t
+on c.class_id = t.class_id
+LEFT JOIN zxedu_ods.fact_student_signin_ods s
+on c.class_id = s.class_id and c.class_date = s.signin_date
+LEFT JOIN
+zxedu_ods.dim_calendar d
+on c.class_date = d.datelist
+)
+INSERT overwrite table zxedu_dws.student_attendance_dwm PARTITION (yearinfo,monthinfo,dayinfo)
+select 
+    dayinfo as dateinfo,
+    class_id,
+    student_id,
+    if(
+               --上午正常打卡为0，迟到10分钟以上为1，其他(请假+旷课)为2
+               sum(
+                   case
+                   --上午打卡时间是否在上课前40分钟~下课时间段之内
+                       when substr(signin_time,11,9) BETWEEN substr(from_unixtime(unix_timestamp(concat('1970-01-01 ',morning_begin_time))-2400),11,9) and 
+            morning_end_time
+                           then 1   --上午来了
+                       else 0 end   --上午没来
+                ) > 0,  --打卡多次，只要有一次正常打卡，就会>0，返回true；否则没来，返回false
+               if(
+                   sum(
+                       case
+                   --上午打卡时间是否在上课前40分钟~上课后10分钟之内
+                          when substr(signin_time,11,9) between substr(from_unixtime(unix_timestamp(concat('1970-01-01 ',morning_begin_time))-2400),11,9)
+                          AND substr(from_unixtime(unix_timestamp(concat('1970-01-01 ',morning_begin_time))+600),11,9)
+                              then 1    --正常出勤
+                          else 0 end    --迟到
+                    ) > 0,              --有一次打卡是正常出勤，就会>0，返回true；否则迟到，返回false
+                   0,   --正常出勤
+                   1    --迟到
+                ),
+               2    --上午没来
+            ) as morning_att,
+    if(
+               --下午正常打卡为0，迟到10分钟以上为1，其他(请假+旷课)为2
+               sum(
+                   case
+                   --下午打卡时间是否在上课前40分钟~下课时间段之内
+                       when substr(signin_time,11,9) BETWEEN substr(from_unixtime(unix_timestamp(concat('1970-01-01 ',afternoon_begin_time))-2400),11,9) and 
+            afternoon_end_time
+                           then 1   --下午来了
+                       else 0 end   --下午没来
+                ) > 0,  --打卡多次，只要有一次正常打卡，就会>0，返回true；否则没来，返回false
+               if(
+                   sum(
+                       case
+                   --下午打卡时间是否在上课前40分钟~上课后10分钟之内
+                          when substr(signin_time,11,9) between substr(from_unixtime(unix_timestamp(concat('1970-01-01 ',afternoon_begin_time))-2400),11,9)
+                          AND substr(from_unixtime(unix_timestamp(concat('1970-01-01 ',afternoon_begin_time))+600),11,9)
+                              then 1    --正常出勤
+                          else 0 end    --迟到
+                    ) > 0,              --有一次打卡是正常出勤，就会>0，返回true；否则迟到，返回false
+                   0,   --正常出勤
+                   1    --迟到
+                ),
+               2    --下午没来
+            ) as afternoon_att,
+    if(
+               --晚上正常打卡为0，迟到10分钟以上为1，其他(请假+旷课)为2
+               sum(
+                   case
+                   --晚上打卡时间是否在上课前40分钟~下课时间段之内
+                       when substr(signin_time,11,9) BETWEEN substr(from_unixtime(unix_timestamp(concat('1970-01-01 ',evening_begin_time))-2400),11,9) and 
+            evening_begin_time
+                           then 1   --晚上来了
+                       else 0 end   --晚上没来
+                ) > 0,  --打卡多次，只要有一次正常打卡，就会>0，返回true；否则没来，返回false
+               if(
+                   sum(
+                       case
+                   --晚上打卡时间是否在上课前40分钟~上课后10分钟之内
+                          when substr(signin_time,11,9) between substr(from_unixtime(unix_timestamp(concat('1970-01-01 ',evening_begin_time))-2400),11,9)
+                          AND substr(from_unixtime(unix_timestamp(concat('1970-01-01 ',evening_begin_time))+600),11,9)
+                              then 1    --正常出勤
+                          else 0 end    --迟到
+                    ) > 0,              --有一次打卡是正常出勤，就会>0，返回true；否则迟到，返回false
+                   0,   --正常出勤
+                   1    --迟到
+                ),
+               2    --晚上没来
+            ) as evening_att,
+    yearinfo,
+    monthinfo,
+    dayinfo
+from stud
+GROUP BY dayinfo,monthinfo,yearinfo,class_id,student_id
+having student_id is not null;
+
+
+
+INSERT overwrite table zxedu_dws.class_attendance_dwm PARTITION (yearinfo,monthinfo,dayinfo)
+SELECT
+dayinfo as dateinfo,
+class_id,
+sum(if(morning_att='0',1,0)) as morning_att_count,
+sum(if(afternoon_att='0',1,0)) as afternoon_att_count,
+sum(if(evening_att='0',1,0)) as evening_att_count,
+sum(if(morning_att='1',1,0)) as morning_late_count,
+sum(if(afternoon_att='1',1,0)) as afternoon_late_count,
+sum(if(evening_att='1',1,0)) as evening_late_count,
+yearinfo,
+monthinfo,
+dayinfo
+FROM 
+zxedu_dws.student_attendance_dwm
+GROUP BY dayinfo,monthinfo,yearinfo,class_id;
+
+
+
+with stud as (
+select
+c.class_date,
+c.class_id,
+s.studying_date,
+s.studying_student_count,
+ca.morning_att_count,
+l.morning_leave_count,
+ca.afternoon_att_count,
+l.afternoon_leave_count,
+ca.evening_att_count,
+l.evening_leave_count,
+year(c.class_date) as yearinfo,
+substr(c.class_date,1,7) as monthinfo,
+c.class_date as dayinfo
+from
+zxedu_ods.dim_course_table_upload_detail_dimen c
+left join
+zxedu_ods.dim_class_studying_student_count_dimen s
+on c.class_id = s.class_id
+left join
+zxedu_dws.class_attendance_dwm ca
+on c.class_id = ca.class_id
+left join
+zxedu_dws.class_leave_dwm l
+on c.class_id = l.class_id
+)
+--INSERT overwrite table zxedu_dws.class_truant_dwm PARTITION (yearinfo,monthinfo,dayinfo)
+select
+dayinfo as class_date,
+class_id,
+cast(sum(coalesce(cast(studying_student_count as int),0))-sum(coalesce(cast(morning_att_count as int),0))-sum(coalesce(cast(morning_leave_count as int),0)) as string) as morning_truant_count,
+cast(sum(coalesce(cast(studying_student_count as int),0))-sum(coalesce(cast(afternoon_att_count as int),0))-sum(coalesce(cast(afternoon_leave_count as int),0)) as string) as afternoon_truant_count,
+cast(sum(coalesce(cast(studying_student_count as int),0))-sum(coalesce(cast(evening_att_count as int),0))-sum(coalesce(cast(evening_leave_count as int),0)) as string) as evening_truant_count,
+yearinfo,
+monthinfo,
+dayinfo
+from 
+stud
+where 
+class_date = studying_date
+group by dayinfo,monthinfo,yearinfo,class_id;
+
+
+
+
+INSERT overwrite table zxedu_dws.class_truant_dwm PARTITION (yearinfo,monthinfo,dayinfo)
+select 
+c.dateinfo,
+st.class_id,
+max(st.studying_student_count-cast(c.morning_att_count as int)-cast(coalesce(l.morning_leave_count,0)as int))as morning_truant_count,
+max(st.studying_student_count-cast(c.afternoon_att_count as int)-cast(coalesce(l.morning_leave_count,0)as int))as afternoon_truant_count,
+max(st.studying_student_count-cast(c.evening_att_count as int)-cast(coalesce(l.morning_leave_count,0)as int))as evening_truant_count,
+c.yearinfo,
+c.monthinfo,
+c.dateinfo
+from 
+zxedu_ods.dim_class_studying_student_count_dimen st
+left join zxedu_dws.class_attendance_dwm c
+on c.class_id = st.class_id and c.dayinfo = st.studying_date
+left join zxedu_dws.class_leave_dwm l
+on st.class_id = l.class_id
+where c.class_id is not null
+group by c.dateinfo,c.monthinfo,c.yearinfo,st.class_id;
+
+
+
+
+
+
+
+
+
+
+
+
+SELECT * from zxedu_dws.class_attendance_dwm;
+SELECT * from zxedu_dws.student_attendance_dwm;
+SELECT * from zxedu_dws.class_truant_dwm;
+SELECT * from zxedu_dws.class_leave_dwm;
+SELECT * from zxedu_ods.dim_class_studying_student_count_dimen;
+
+
+set hive.exec.dynamic.partition.mode=nonstrict
+
+with stud as (
+SELECT
+row_number() over ( partition by ca.dayinfo,ca.class_id) rn,
+ca.dayinfo,
+ca.class_id,
+ca.monthinfo,
+ca.yearinfo,
+scd.studying_student_count,
+ca.morning_att_count,
+cast
+ (
+ round((cast(ca.morning_att_count as int)*1.000/scd.studying_student_count),2)  as STRING
+ ) as morning_att_ratio,
+ca.afternoon_att_count,
+cast
+ (
+ round((cast(ca.afternoon_att_count as int)*1.000/scd.studying_student_count),2)  as STRING
+ ) as afternoon_att_ratio,
+ca.evening_att_count,
+cast
+ (
+ round((cast(ca.evening_att_count as int)*1.000/scd.studying_student_count),2)  as STRING
+ ) as evening_att_ratio,
+ca.morning_late_count,
+cast
+ (
+ round((cast(ca.morning_late_count as int)*1.000/scd.studying_student_count),2)  as STRING
+ ) as morning_late_ratio,
+ca.afternoon_late_count,
+cast
+ (
+ round((cast(ca.afternoon_late_count as int)*1.000/scd.studying_student_count),2)  as STRING
+ ) as afternoon_late_ratio,
+ca.evening_late_count,
+cast
+ (
+ round((cast(ca.evening_late_count as int)*1.000/scd.studying_student_count),2)  as STRING
+ ) as evening_late_ratio,
+coalesce(cl.morning_leave_count,0) as morning_leave_count,
+cast
+ (
+ round((cast(coalesce(cl.morning_leave_count,0) as int)*1.000/scd.studying_student_count),2)  as STRING
+ ) as morning_leave_ratio,
+coalesce(cl.afternoon_leave_count,0) as afternoon_leave_count,
+cast
+ (
+ round((cast(coalesce(cl.afternoon_leave_count,0) as int)*1.000/scd.studying_student_count),2)  as STRING
+ ) as afternoon_leave_ratio,
+coalesce(cl.evening_leave_count,0) as evening_leave_count,
+cast
+ (
+ round((cast(coalesce(cl.evening_leave_count,0) as int)*1.000/scd.studying_student_count),2)  as STRING
+ ) as evening_leave_ratio,
+ct.morning_truant_count,
+cast
+ (
+ round((cast(ct.morning_truant_count as int)*1.000/scd.studying_student_count),2)  as STRING
+ ) as morning_truant_ratio,
+ct.afternoon_truant_count,
+cast
+ (
+ round((cast(ct.afternoon_truant_count as int)*1.000/scd.studying_student_count),2)  as STRING
+ ) as afternoon_truant_ratio,
+ct.evening_truant_count,
+cast
+ (
+ round((cast(ct.evening_truant_count as int)*1.000/scd.studying_student_count),2)  as STRING
+ ) as evening_truant_ratio
+from 
+zxedu_dws.class_attendance_dwm ca
+LEFT JOIN
+zxedu_ods.dim_class_studying_student_count_dimen scd
+on  scd.studying_date = ca.dateinfo and  scd.class_id = ca.class_id
+LEFT JOIN
+zxedu_dws.class_truant_dwm ct
+on ca.class_id = ct.class_id 
+LEFT JOIN
+zxedu_dws.class_leave_dwm cl
+on ca.class_id = cl.class_id)
+INSERT overwrite table zxedu_dws.attendance_summary_dwm PARTITION (yearinfo,monthinfo,dayinfo)
+SELECT 
+dayinfo AS dateinfo,
+class_id,
+studying_student_count,
+morning_att_count,
+morning_att_ratio,
+afternoon_att_count,
+afternoon_att_ratio,
+evening_att_count,
+evening_att_ratio,
+morning_late_count,
+morning_late_ratio,
+afternoon_late_count,
+afternoon_late_ratio,
+evening_late_count,
+evening_late_ratio,
+morning_leave_count,
+morning_leave_ratio,
+afternoon_leave_count,
+afternoon_leave_ratio,
+evening_leave_count,
+evening_leave_ratio,
+morning_truant_count,
+morning_truant_ratio,
+afternoon_truant_count,
+afternoon_truant_ratio,
+evening_truant_count,
+evening_truant_ratio,
+yearinfo,
+monthinfo,
+dayinfo
+FROM 
+stud
+where rn =1 and studying_student_count != 0;
+
+
+
+
+
+
+
+
+
