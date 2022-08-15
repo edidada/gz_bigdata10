@@ -1,0 +1,82 @@
+-- 班级出勤信息表
+CREATE TABLE IF NOT EXISTS edu_dws.class_attendance_dwm (
+    dateinfo        String        comment '日期',
+    class_id          int           comment '班级id',
+    morning_att_count       String         comment '上午出勤人数',
+    afternoon_att_count      String        comment '下午出勤人数',
+    evening_att_count       String        comment '晚自习出勤人数',
+    morning_late_count       String         comment '上午迟到人数',
+    afternoon_late_count      String        comment '下午迟到人数',
+    evening_late_count       String        comment '晚自习迟到人数')
+comment '学生出勤(正常出勤和迟到)数据'
+PARTITIONED BY (yearinfo STRING, monthinfo STRING, dayinfo STRING)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+stored as orcfile
+TBLPROPERTIES ('orc.compress'='SNAPPY');
+
+
+
+
+set hive.exec.dynamic.partition.mode=nonstrict;
+INSERT INTO edu_dws.class_attendance_dwm
+partition (yearinfo,monthinfo,dayinfo)
+SELECT 
+    sad.dateinfo,
+    sad.class_id,
+    --早上出勤人数
+    count(DISTINCT
+    case 
+        when sad.morning_att = '0' or sad.morning_att = '1'
+        then sad.student_id
+    else null
+    end
+    ) as morning_att_count,
+    --下午出勤人数
+    count(DISTINCT
+    case 
+        when sad.afternoon_att = '0' or sad.afternoon_att = '1'
+        then sad.student_id
+    else null
+    end
+    ) as afternoon_att_count,
+    --晚上出勤人数
+    count(DISTINCT
+    case 
+        when sad.evening_att = '0' or sad.evening_att = '1'
+        then sad.student_id
+    else null
+    end
+    ) as evening_att_count,
+    --早上迟到人数
+    count(DISTINCT
+    case 
+        when sad.morning_att = '1'
+        then sad.student_id
+    else null
+    end
+    ) as morning_late_count, 
+    --下午迟到人数
+    count(DISTINCT
+    case 
+        when sad.afternoon_att = '0' or sad.afternoon_att = '1'
+        then sad.student_id
+    else null
+    end
+     ) as afternoon_late_count, 
+    --晚上迟到人数
+    count(DISTINCT
+    case 
+        when sad.evening_att = '1'
+        then sad.student_id
+    else null
+    end
+    ) as evening_late_count, 
+    --2022-08-31 12:00:00
+    substr(sad.dateinfo,1,4) as yearinfo,
+    substr(sad.dateinfo,6,2) as monthinfo,
+    substr(sad.dateinfo,9,2) as dayinfo
+from edu_dws.student_attendance_dwm sad 
+left join edu_ods.course_table_upload_detail tud
+on tud.class_id = sad.class_id
+GROUP BY sad.dateinfo,sad.class_id having sad.class_id is not null;

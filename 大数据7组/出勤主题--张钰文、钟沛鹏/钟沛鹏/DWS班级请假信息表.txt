@@ -1,0 +1,99 @@
+-- 班级请假信息表
+CREATE TABLE IF NOT EXISTS edu_dws.class_leave_dwm (
+    dateinfo      String        comment '日期',
+    class_id        int           comment '班级id',
+    morning_leave_count       String       comment '上午请假人数',
+    afternoon_leave_count    String        comment '下午请假人数',
+    evening_leave_count       String        comment '晚自习请假人数')
+comment '班级请假数据统计'
+PARTITIONED BY (yearinfo STRING, monthinfo STRING, dayinfo STRING)
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY '\t'
+stored as orcfile
+TBLPROPERTIES ('orc.compress'='SNAPPY');
+
+
+
+
+set hive.exec.dynamic.partition.mode=nonstric;
+--audit_state请假状态为2和请假的日期begin_time落在 课件时间
+with student_leave_count as 
+(select
+    tud.class_date as dateinfo,
+    tud.class_id,
+    sla.student_id,
+    sla.audit_state,
+    sla.valid_state,
+    sla.cancel_state,
+    tud.content,
+    
+    --早上上课前40分钟
+    unix_timestamp(concat_ws(' ',tud.class_date, ctt.morning_begin_time),'yyyy-MM-dd HH:mm:ss')-2400 as morning_begin_time1,
+    --早上下课时间
+    unix_timestamp(concat_ws(' ',tud.class_date, ctt.morning_end_time),'yyyy-MM-dd HH:mm:ss') as morning_end_time,
+    --下午上课前40分钟
+    unix_timestamp(concat_ws(' ',tud.class_date, ctt.afternoon_begin_time),'yyyy-MM-dd HH:mm:ss')-2400 as afternoon_begin_time1,
+    --下午下课时间
+    unix_timestamp(concat_ws(' ',tud.class_date, ctt.afternoon_end_time),'yyyy-MM-dd HH:mm:ss') as afternoon_end_time,
+    --晚上上课前40分钟
+    unix_timestamp(concat_ws(' ',tud.class_date, ctt.evening_begin_time),'yyyy-MM-dd HH:mm:ss')-2400 as evening_begin_time1,
+    --晚上下课时间
+    unix_timestamp(concat_ws(' ',tud.class_date, ctt.evening_end_time),'yyyy-MM-dd HH:mm:ss') as evening_end_time,
+    
+    --学生请假时间
+    unix_timestamp(sla.begin_time,'yyyy-MM-dd HH:mm:ss') as student_leave_time,
+    
+     substr(tud.class_date,1,4) as yearinfo,
+    substr(tud.class_date,6,2) as monthinfo,
+    substr(tud.class_date,9,2) as dayinfo
+    
+from edu_ods.student_leave_apply sla
+left join edu_ods.tbh_class_time_table ctt
+on sla.class_id = ctt.class_id
+left join edu_ods.course_table_upload_detail tud
+on tud.class_id = sla.class_id
+where ctt.morning_begin_time  >= substr(sla.begin_time,12,8)  and ctt.morning_begin_time <= substr(sla.end_time,12,8)
+and tud.class_date >= substr(sla.begin_time,1,10) and tud.class_date <= substr(sla.end_time,1,10))
+--INSERT into edu_dws.class_leave_dwm
+--partition (yearinfo,monthinfo,dayinfo)
+select 
+    dateinfo,
+    class_id,
+    --上午请假人数
+    count(distinct
+        case 
+            when (student_leave_time between morning_begin_time1 and morning_end_time) and cancel_state = 0  and audit_state = 1 and valid_state = 1
+            then student_id
+            else null
+        end 
+    ) morning_leave_count,
+    
+    --下午请假人数
+    count(distinct
+        case 
+            when (student_leave_time between afternoon_begin_time1 and afternoon_end_time) and cancel_state = 0  and audit_state = 1 and valid_state = 1
+            then student_id
+            else null
+        end 
+    ) afternoon_leave_count,
+    
+    --晚上请假人数
+    count(distinct
+        case 
+            when (student_leave_time between evening_begin_time1 and evening_end_time) and cancel_state = 0  and audit_state = 1 and valid_state = 1
+            then student_id
+            else null
+        end 
+    ) evening_leave_count,
+    yearinfo,
+    monthinfo,
+    dayinfo
+from student_leave_count 
+where content != '开班典礼'  and nvl(content,'') != ''
+group by dateinfo,class_id,yearinfo,monthinfo,dayinfo;
+
+
+
+group by dateinfo,class_id,yearinfo,monthinfo,dayinfo;
+
+

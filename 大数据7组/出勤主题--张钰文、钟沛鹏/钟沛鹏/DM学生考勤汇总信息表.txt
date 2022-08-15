@@ -1,0 +1,109 @@
+-- 在presto执行
+insert  into  edu_dm.class_attendance_dws
+WITH class_sum_table as
+(select
+    cad.dateinfo,
+    cad.class_id,
+    cssc.studying_student_count,
+    cad.morning_att_count,
+    --早上出勤率
+    cast(cast(cad.morning_att_count as decimal (8,2))  / cssc.studying_student_count as varchar ) morning_att_ratio,
+
+    cad.afternoon_att_count,
+    --下午出勤率
+    cast(cast(cad.afternoon_att_count as decimal (8,2))  / cssc.studying_student_count as varchar ) afternoon_att_ratio,
+
+    cad.evening_att_count,
+    --晚上出勤率
+    cast(cast(cad.evening_att_count as decimal (8,2))  / cssc.studying_student_count as varchar ) evening_att_ratio,
+
+    cad.morning_late_count,
+    --早上迟到率
+    cast(cast(cad.morning_late_count as decimal (8,2))  / cssc.studying_student_count as varchar ) morning_late_ratio,
+
+    cad.afternoon_late_count,
+    --中午迟到率
+    cast(cast(cad.afternoon_late_count as decimal (8,2))  / cssc.studying_student_count as varchar ) afternoon_late_ratio,
+
+    cad.evening_late_count,
+    --晚上迟到率
+    cast(cast(cad.evening_late_count as decimal (8,2))  / cssc.studying_student_count as varchar ) evening_late_ratio,
+
+    cld.morning_leave_count,
+    --早上请假率
+    cast(cast(cld.morning_leave_count as decimal (10,2))  / cssc.studying_student_count as varchar ) morning_leave_ratio,
+
+    cld.afternoon_leave_count,
+    --下午请假率
+    cast(cast(cld.afternoon_leave_count as decimal (10,2))  / cssc.studying_student_count as varchar ) afternoon_leave_ratio,
+
+    cld.evening_leave_count,
+    --晚上请假率
+    cast(cast(cld.afternoon_leave_count as decimal (10,2))  / cssc.studying_student_count as varchar ) afternoon_leave_ratio,
+
+
+    ctd.morning_truant_count,
+    --上午旷课人率
+    cast(cast(ctd.morning_truant_count as decimal (10,2))  / cssc.studying_student_count as varchar ) morning_leave_ratio,
+
+    ctd.afternoon_truant_count,
+    --下午旷课人率
+    cast(cast(ctd.afternoon_truant_count as decimal (10,2))  / cssc.studying_student_count as varchar ) morning_leave_ratio,
+
+    ctd.evening_truant_count,
+    --晚上旷课率
+    cast(cast(ctd.evening_truant_count as decimal (10,2))  / cssc.studying_student_count as varchar ) morning_leave_ratio,
+
+    '1' as time_type ,
+    cad.yearinfo,
+    cad.monthinfo,
+    cad.dayinfo
+from edu_dws.class_attendance_dwm cad
+ join edu_ods.class_studying_student_count cssc
+on cad.class_id = cssc.class_id and cad.dateinfo = cssc.studying_date
+left join edu_dws.class_leave_dwm cld
+on cad.class_id = cld.class_id and cad.dateinfo = cld.dateinfo and cld.dateinfo = cssc.studying_date
+left join edu_dws.class_truant_dwm ctd
+on cad.class_id = ctd.class_id and cad.dateinfo = ctd.dateinfo
+
+where cssc.studying_student_count is not null)
+ select  * from class_sum_table
+ where cast(morning_att_ratio as decimal(10,3) )<1 and cast(afternoon_att_ratio as decimal(10,3) )<1 and cast(evening_att_ratio as decimal(10,3) )<1
+ and cast(morning_late_ratio as decimal(10,3) )<1 and cast(afternoon_late_ratio as decimal(10,3) )<1 and cast(evening_late_ratio as decimal(10,3) )<1;
+
+
+
+CREATE TABLE IF NOT EXISTS mysql.nev.class_attendance(
+    dateinfo      varchar       comment '日期',
+    class_id        int           comment '班级id',
+   studying_student_count int  comment '在读班级人数',
+    morning_att_count       varchar        comment '上午出勤人数',
+   morning_att_ratio       varchar        comment '上午出勤率',
+    afternoon_att_count      varchar       comment '下午出勤人数',
+   afternoon_att_ratio      varchar       comment '下午出勤率',
+    evening_att_count       varchar       comment '晚自习出勤人数',
+   evening_att_ratio       varchar       comment '晚自习出勤率',
+   morning_late_count       varchar       comment '上午迟到人数',
+   morning_late_ratio       varchar       comment '上午迟到率',
+    afternoon_late_count     varchar       comment '下午迟到人数',
+   afternoon_late_ratio     varchar       comment '下午迟到率',
+    evening_late_count       varchar       comment '晚自习迟到人数',
+   evening_late_ratio       varchar       comment '晚自习迟到率',
+   morning_leave_count       varchar      comment '上午请假人数',
+   morning_leave_ratio       varchar      comment '上午请假率',
+    afternoon_leave_count    varchar       comment '下午请假人数',
+   afternoon_leave_ratio    varchar       comment '下午请假率',
+    evening_leave_count       varchar       comment '晚自习请假人数',
+   evening_leave_ratio       varchar       comment '晚自习请假率',
+    morning_truant_count       varchar         comment '上午旷课人数',
+   morning_truant_ratio       varchar         comment '上午旷课率',
+    afternoon_truant_count   varchar       comment '下午旷课人数',
+   afternoon_truant_ratio   varchar       comment '下午旷课率',
+    evening_truant_count       varchar       comment '晚自习旷课人数',
+   evening_truant_ratio       varchar       comment '晚自习旷课率',
+   time_type            varchar      COMMENT '聚合时间类型：1、按小时聚合；2、按天聚合；3、按周聚合；4、按月聚合；5、按年聚合。',
+   yearinfo        varchar,
+    monthinfo       varchar,
+    dayinfo     varchar
+);
+insert into mysql.nev.class_attendance select * from hive.edu_dm.class_attendance_dws;

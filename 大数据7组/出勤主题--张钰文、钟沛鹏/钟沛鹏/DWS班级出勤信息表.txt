@@ -1,0 +1,130 @@
+-- 学生出勤信息表
+CREATE TABLE IF NOT EXISTS edu_dws.student_attendance_dwm (
+    dateinfo        String        comment '日期',
+    class_id          int           comment '班级id',
+    student_id        int           comment '学员id',
+    morning_att       String       comment '上午出勤情况：0.正常出勤、1.迟到、2.其他（请假+旷课）',
+    afternoon_att    String        comment '下午出勤情况：0.正常出勤、1.迟到、2.其他（请假+旷课）',
+    evening_att       String        comment '晚自习出勤情况：0.正常出勤、1.迟到、2.其他（请假+旷课）')
+comment '学生出勤(正常出勤和迟到)数据'
+PARTITIONED BY (yearinfo STRING, monthinfo STRING, dayinfo STRING)
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY '\t'
+stored as orcfile
+TBLPROPERTIES ('orc.compress'='SNAPPY');
+
+
+
+
+
+ set hive.exec.dynamic.partition.mode=nonstrict;
+ select * from edu_dws.student_attendance_dwm;
+WITH class_attend_time AS
+(SELECT 
+    tud.class_date  as dateinfo,
+    ctt.class_id,
+    ssr.student_id,
+    tud.class_date,
+    tud.content,
+    ssr.share_state,
+    --早上上课时间
+    unix_timestamp(concat_ws(' ',tud.class_date, ctt.morning_begin_time),'yyyy-MM-dd HH:mm:ss') as morning_begin_time,
+    --早上上课前40分钟
+    unix_timestamp(concat_ws(' ',tud.class_date, ctt.morning_begin_time),'yyyy-MM-dd HH:mm:ss')-2400 as morning_begin_time1,
+    --早上上课后10分钟
+    unix_timestamp(concat_ws(' ',tud.class_date, ctt.morning_begin_time),'yyyy-MM-dd HH:mm:ss')+600 as morning_begin_time2,
+    --早上下课时间
+    unix_timestamp(concat_ws(' ',tud.class_date, ctt.morning_end_time),'yyyy-MM-dd HH:mm:ss') as morning_end_time,
+   
+    --下午上课时间
+    unix_timestamp(concat_ws(' ',tud.class_date, ctt.afternoon_begin_time),'yyyy-MM-dd HH:mm:ss') as afternoonbegin_time,
+    --下午上课前40分钟
+    unix_timestamp(concat_ws(' ',tud.class_date, ctt.afternoon_begin_time),'yyyy-MM-dd HH:mm:ss')-2400 as afternoon_begin_time1,
+    --下午上课后10分钟
+    unix_timestamp(concat_ws(' ',tud.class_date, ctt.afternoon_begin_time),'yyyy-MM-dd HH:mm:ss')+600 as afternoon_begin_time2,
+    --下午下课时间
+    unix_timestamp(concat_ws(' ',tud.class_date, ctt.afternoon_end_time),'yyyy-MM-dd HH:mm:ss') as afternoon_end_time,
+    
+    
+     --晚上上课时间
+    unix_timestamp(concat_ws(' ',tud.class_date, ctt.evening_begin_time),'yyyy-MM-dd HH:mm:ss') as eveningbegin_time,
+    --晚上上课前40分钟
+    unix_timestamp(concat_ws(' ',tud.class_date, ctt.evening_begin_time),'yyyy-MM-dd HH:mm:ss')-2400 as evening_begin_time1,
+    --晚上上课后10分钟
+    unix_timestamp(concat_ws(' ',tud.class_date, ctt.evening_begin_time),'yyyy-MM-dd HH:mm:ss')+600 as evening_begin_time2,
+    --晚上下课时间
+    unix_timestamp(concat_ws(' ',tud.class_date, ctt.evening_end_time),'yyyy-MM-dd HH:mm:ss') as evening_end_time,
+    
+    --2012-8-10
+    --学生打卡时间
+    unix_timestamp(ssr.signin_time,'yyyy-MM-dd HH:mm:ss') as signin_date,
+    ssr.signin_date as sd,
+   
+    
+    substr(ctt.create_time,1,4) as yearinfo,
+    substr(ctt.create_time,6,2) as monthinfo,
+    substr(ctt.create_time,9,2) as dayinfo
+FROM  edu_ods.tbh_student_signin_record ssr
+ JOIN edu_ods.tbh_class_time_table  ctt
+ON ssr.time_table_id = ctt.id
+ JOIN edu_ods.course_table_upload_detail tud
+ON tud.class_id = ssr.class_id and ssr.signin_date = tud.class_date)
+--SELECT * FROM class_attend_time LIMIT 10;
+
+INSERT into table edu_dws.student_attendance_dwm
+PARTITION (yearinfo,monthinfo,dayinfo)
+SELECT 
+    dateinfo,
+    class_id,
+    student_id,
+   case
+    when  (class_date = sd) and (signin_date BETWEEN morning_begin_time1 and morning_begin_time2)
+    then '0'   --正常打卡
+    when  (class_date = sd) and (signin_date BETWEEN morning_begin_time2 and morning_end_time)
+    then '1'   --迟到打卡
+    else '2'    --缺勤
+   end   
+   morning_att,
+   
+   case
+    when  (class_date = sd) and (signin_date BETWEEN afternoon_begin_time1 and afternoon_begin_time2)
+    then '0'   
+    when (class_date = sd) and (signin_date BETWEEN afternoon_begin_time2 and afternoon_end_time)
+    then '1'  
+    else '2'
+   end   
+   afternoon_att,
+   case
+    when  (class_date = sd) and (signin_date BETWEEN evening_begin_time1 and evening_begin_time2)
+    then '0'   
+    when (class_date = sd) and (signin_date BETWEEN evening_begin_time2 and evening_end_time)
+    then '1'  
+    else '2'
+   end   
+   evening_att,
+    yearinfo,monthinfo,dayinfo
+FROM class_attend_time
+where content != '开班典礼' and share_state = 1  and nvl(content,'') != '';
+
+--GROUP BY class_id,student_id,dateinfo;
+
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+  
