@@ -1,0 +1,1006 @@
+--区域字典表（全量覆盖）
+DROP TABLE if EXISTS guangzhou10_zhaochunzhang_dwd.dim_district;
+CREATE TABLE guangzhou10_zhaochunzhang_dwd.dim_district(
+  id string COMMENT '主键ID', 
+  code string COMMENT '区域编码', 
+  name string COMMENT '区域名称', 
+  pid string COMMENT '父级ID', 
+  alias string COMMENT '别名')
+COMMENT '区域字典表'
+row format delimited fields terminated by '\t'
+stored as orc 
+tblproperties ('orc.compress' = 'SNAPPY');
+
+--时间维度
+drop table guangzhou10_zhaochunzhang_dwd.dim_date;
+CREATE TABLE guangzhou10_zhaochunzhang_dwd.dim_date
+(
+    dim_date_id           string COMMENT '日期',
+    date_code             string COMMENT '日期编码',
+    lunar_calendar        string COMMENT '农历',
+    year_code             string COMMENT '年code',
+    year_name             string COMMENT '年名称',
+    month_code            string COMMENT '月份编码',
+    month_name            string COMMENT '月份名称',
+    quanter_code          string COMMENT '季度编码',
+    quanter_name          string COMMENT '季度名称',
+    year_month            string COMMENT '年月',
+    year_week_code        string COMMENT '一年中第几周',
+    year_week_name        string COMMENT '一年中第几周名称',
+    year_week_code_cn     string COMMENT '一年中第几周（中国）',
+    year_week_name_cn     string COMMENT '一年中第几周名称（中国',
+    week_day_code         string COMMENT '周几code',
+    week_day_name         string COMMENT '周几名称',
+    day_week              string COMMENT '周',
+    day_week_cn           string COMMENT '周(中国)',
+    day_week_num          string COMMENT '一周第几天',
+    day_week_num_cn       string COMMENT '一周第几天（中国）',
+    day_month_num         string COMMENT '一月第几天',
+    day_year_num          string COMMENT '一年第几天',
+    date_id_wow           string COMMENT '与本周环比的上周日期',
+    date_id_mom           string COMMENT '与本月环比的上月日期',
+    date_id_wyw           string COMMENT '与本周同比的上年日期',
+    date_id_mym           string COMMENT '与本月同比的上年日期',
+    first_date_id_month   string COMMENT '本月第一天日期',
+    last_date_id_month    string COMMENT '本月最后一天日期',
+    half_year_code        string COMMENT '半年code',
+    half_year_name        string COMMENT '半年名称',
+    season_code           string COMMENT '季节编码',
+    season_name           string COMMENT '季节名称',
+    is_weekend            string COMMENT '是否周末（周六和周日）',
+    official_holiday_code string COMMENT '法定节假日编码',
+    official_holiday_name string COMMENT '法定节假日',
+    festival_code         string COMMENT '节日编码',
+    festival_name         string COMMENT '节日',
+    custom_festival_code  string COMMENT '自定义节日编码',
+    custom_festival_name  string COMMENT '自定义节日',
+    update_time           string COMMENT '更新时间'
+)
+COMMENT '时间维度表'
+row format delimited fields terminated by '\t'
+stored as orc 
+tblproperties ('orc.compress' = 'SNAPPY');
+
+
+--店铺（拉链表）
+DROP TABLE if EXISTS guangzhou10_zhaochunzhang_dwd.dim_store;
+CREATE TABLE guangzhou10_zhaochunzhang_dwd.dim_store(
+  id string COMMENT '主键', 
+  user_id string, 
+  store_avatar string COMMENT '店铺头像', 
+  address_info string COMMENT '店铺详细地址', 
+  name string COMMENT '店铺名称', 
+  store_phone string COMMENT '联系电话', 
+  province_id int COMMENT '店铺所在省份ID', 
+  city_id int COMMENT '店铺所在城市ID', 
+  area_id int COMMENT '店铺所在县ID', 
+  mb_title_img string COMMENT '手机店铺 页头背景图', 
+  store_description string COMMENT '店铺描述', 
+  notice string COMMENT '店铺公告', 
+  is_pay_bond tinyint COMMENT '是否有交过保证金 1：是0：否', 
+  trade_area_id string COMMENT '归属商圈ID', 
+  delivery_method tinyint COMMENT '配送方式  1 ：自提 ；3 ：自提加配送均可\; 2 : 商家配送', 
+  origin_price decimal(36,2), 
+  free_price decimal(36,2), 
+  store_type int COMMENT '店铺类型 22天街网店 23实体店 24直营店铺 33会员专区店', 
+  store_label string COMMENT '店铺logo', 
+  search_key string COMMENT '店铺搜索关键字', 
+  end_time string COMMENT '营业结束时间', 
+  start_time string COMMENT '营业开始时间', 
+  operating_status tinyint COMMENT '营业状态  0 ：未营业 ；1 ：正在营业', 
+  create_user string, 
+  create_time string, 
+  update_user string, 
+  update_time string, 
+  is_valid tinyint COMMENT '0关闭，1开启，3店铺申请中', 
+  state string COMMENT '可使用的支付类型:MONEY金钱支付\;CASHCOUPON现金券支付', 
+  idcard string COMMENT '身份证', 
+  deposit_amount decimal(36,2) COMMENT '商圈认购费用总额', 
+  delivery_config_id string COMMENT '配送配置表关联ID', 
+  aip_user_id string COMMENT '通联支付标识ID', 
+  search_name string COMMENT '模糊搜索名称字段:名称_+真实名称', 
+  automatic_order tinyint COMMENT '是否开启自动接单功能 1：是  0 ：否', 
+  is_primary tinyint COMMENT '是否是总店 1: 是 2: 不是', 
+  parent_store_id string COMMENT '父级店铺的id，只有当is_primary类型为2时有效',
+  end_date string COMMENT '拉链结束日期')
+COMMENT '店铺表'
+partitioned by (start_date string)
+row format delimited fields terminated by '\t'
+stored as orc 
+tblproperties ('orc.compress' = 'SNAPPY');
+
+
+--商圈（拉链表）
+DROP TABLE if EXISTS guangzhou10_zhaochunzhang_dwd.dim_trade_area;
+CREATE TABLE guangzhou10_zhaochunzhang_dwd.dim_trade_area(
+  id string COMMENT '主键', 
+  user_id string COMMENT '用户ID', 
+  user_allinpay_id string COMMENT '通联用户表id', 
+  trade_avatar string COMMENT '商圈logo', 
+  name string COMMENT '商圈名称', 
+  notice string COMMENT '商圈公告', 
+  distric_province_id int COMMENT '商圈所在省份ID', 
+  distric_city_id int COMMENT '商圈所在城市ID', 
+  distric_area_id int COMMENT '商圈所在县ID', 
+  address string COMMENT '商圈地址', 
+  radius double COMMENT '半径', 
+  mb_title_img string COMMENT '手机商圈 页头背景图', 
+  deposit_amount decimal(36,2) COMMENT '商圈认购费用总额', 
+  hava_deposit int COMMENT '是否有交过保证金 1：是0：否', 
+  state tinyint COMMENT '申请商圈状态 -1 ：未认购 ；0 ：申请中；1 ：已认购；', 
+  search_key string COMMENT '商圈搜索关键字', 
+  create_user string, 
+  create_time string, 
+  update_user string, 
+  update_time string, 
+  is_valid tinyint COMMENT '是否有效  0: false\; 1: true',
+  end_date string COMMENT '拉链结束日期')
+COMMENT '商圈表'
+partitioned by (start_date string)
+row format delimited fields terminated by '\t'
+stored as orc 
+tblproperties ('orc.compress' = 'SNAPPY');
+
+
+--地址信息表（拉链表）
+DROP TABLE if EXISTS guangzhou10_zhaochunzhang_dwd.dim_location;
+CREATE TABLE guangzhou10_zhaochunzhang_dwd.dim_location(
+  id string COMMENT '主键', 
+  type int COMMENT '类型   1：商圈地址；2：店铺地址；3.用户地址管理\;4.订单买家地址信息\;5.订单卖家地址信息', 
+  correlation_id string COMMENT '关联表id', 
+  address string COMMENT '地图地址详情', 
+  latitude double COMMENT '纬度', 
+  longitude double COMMENT '经度', 
+  street_number string COMMENT '门牌', 
+  street string COMMENT '街道', 
+  district string COMMENT '区县', 
+  city string COMMENT '城市', 
+  province string COMMENT '省份', 
+  business string COMMENT '百度商圈字段，代表此点所属的商圈', 
+  create_user string, 
+  create_time string, 
+  update_user string, 
+  update_time string, 
+  is_valid tinyint COMMENT '是否有效  0: false\; 1: true', 
+  adcode string COMMENT '百度adcode,对应区县code',
+  end_date string COMMENT '拉链结束日期')
+COMMENT '地址信息'
+partitioned by (start_date string)
+row format delimited fields terminated by '\t'
+stored as orc 
+tblproperties ('orc.compress' = 'SNAPPY');
+
+
+--商品SKU表（拉链表）
+DROP TABLE if EXISTS guangzhou10_zhaochunzhang_dwd.dim_goods;
+CREATE TABLE guangzhou10_zhaochunzhang_dwd.dim_goods(
+  id string, 
+  store_id string COMMENT '所属商店ID', 
+  class_id string COMMENT '分类id:只保存最后一层分类id', 
+  store_class_id string COMMENT '店铺分类id', 
+  brand_id string COMMENT '品牌id', 
+  goods_name string COMMENT '商品名称', 
+  goods_specification string COMMENT '商品规格', 
+  search_name string COMMENT '模糊搜索名称字段:名称_+真实名称', 
+  goods_sort int COMMENT '商品排序', 
+  goods_market_price decimal(36,2) COMMENT '商品市场价', 
+  goods_price decimal(36,2) COMMENT '商品销售价格(原价)', 
+  goods_promotion_price decimal(36,2) COMMENT '商品促销价格(售价)', 
+  goods_storage int COMMENT '商品库存', 
+  goods_limit_num int COMMENT '购买限制数量', 
+  goods_unit string COMMENT '计量单位', 
+  goods_state tinyint COMMENT '商品状态 1正常，2下架,3违规（禁售）', 
+  goods_verify tinyint COMMENT '商品审核状态: 1通过，2未通过，3审核中', 
+  activity_type tinyint COMMENT '活动类型:0无活动1促销2秒杀3折扣', 
+  discount int COMMENT '商品折扣(%)', 
+  seckill_begin_time string COMMENT '秒杀开始时间', 
+  seckill_end_time string COMMENT '秒杀结束时间', 
+  seckill_total_pay_num int COMMENT '已秒杀数量', 
+  seckill_total_num int COMMENT '秒杀总数限制', 
+  seckill_price decimal(36,2) COMMENT '秒杀价格', 
+  top_it tinyint COMMENT '商品置顶：1-是，0-否', 
+  create_user string, 
+  create_time string, 
+  update_user string, 
+  update_time string, 
+  is_valid tinyint COMMENT '0 ：失效，1 ：开启',
+  end_date string COMMENT '拉链结束日期')
+COMMENT '商品表_店铺(SKU)'
+partitioned by (start_date string)
+row format delimited fields terminated by '\t'
+stored as orc 
+tblproperties ('orc.compress' = 'SNAPPY');
+
+
+--商品分类（拉链表）
+DROP TABLE if EXISTS guangzhou10_zhaochunzhang_dwd.dim_goods_class;
+CREATE TABLE guangzhou10_zhaochunzhang_dwd.dim_goods_class(
+  id string, 
+  store_id string COMMENT '店铺id', 
+  class_id string COMMENT '对应的平台分类表id', 
+  name string COMMENT '店铺内分类名字', 
+  parent_id string COMMENT '父id', 
+  level tinyint COMMENT '分类层级', 
+  is_parent_node tinyint COMMENT '是否为父节点:1是0否', 
+  background_img string COMMENT '背景图片', 
+  img string COMMENT '分类图片', 
+  keywords string COMMENT '关键词', 
+  title string COMMENT '搜索标题', 
+  sort int COMMENT '排序', 
+  note string COMMENT '类型描述', 
+  url string COMMENT '分类的链接', 
+  is_use tinyint COMMENT '是否使用:0否,1是', 
+  create_user string, 
+  create_time string, 
+  update_user string, 
+  update_time string, 
+  is_valid tinyint COMMENT '0 ：失效，1 ：开启',
+  end_date string COMMENT '拉链结束日期')
+COMMENT '商品分类表'
+partitioned by (start_date string)
+row format delimited fields terminated by '\t'
+stored as orc 
+tblproperties ('orc.compress' = 'SNAPPY');
+
+
+--品牌表（拉链表）
+DROP TABLE if EXISTS guangzhou10_zhaochunzhang_dwd.dim_brand;
+CREATE TABLE guangzhou10_zhaochunzhang_dwd.dim_brand(
+  id string, 
+  store_id string COMMENT '店铺id', 
+  brand_pt_id string COMMENT '平台品牌库品牌Id', 
+  brand_name string COMMENT '品牌名称', 
+  brand_image string COMMENT '品牌图片', 
+  initial string COMMENT '品牌首字母', 
+  sort int COMMENT '排序', 
+  is_use tinyint COMMENT '0禁用1启用', 
+  goods_state tinyint COMMENT '商品品牌审核状态 1 审核中,2 通过,3 拒绝', 
+  create_user string, 
+  create_time string, 
+  update_user string, 
+  update_time string, 
+  is_valid tinyint COMMENT '0 ：失效，1 ：开启',
+  end_date string COMMENT '拉链结束日期')
+COMMENT '品牌（店铺）'
+partitioned by (start_date string)
+row format delimited fields terminated by '\t'
+stored as orc 
+tblproperties ('orc.compress' = 'SNAPPY'); 
+
+
+
+--订单事实表（拉链表）
+DROP TABLE if EXISTS guangzhou10_zhaochunzhang_dwd.fact_shop_order;
+CREATE TABLE guangzhou10_zhaochunzhang_dwd.fact_shop_order(
+  id string COMMENT '根据一定规则生成的订单编号',
+  order_num string COMMENT '订单序号', 
+  buyer_id string COMMENT '买家的userId', 
+  store_id string COMMENT '店铺的id', 
+  order_from string COMMENT '此字段可以转换 1.安卓\; 2.ios\; 3.小程序H5 \; 4.PC', 
+  order_state int COMMENT '订单状态:1.已下单\; 2.已付款, 3. 已确认 \;4.配送\; 5.已完成\; 6.退款\;7.已取消', 
+  create_date string COMMENT '下单时间', 
+  finnshed_time timestamp COMMENT '订单完成时间,当配送员点击确认送达时,进行更新订单完成时间,后期需要根据订单完成时间,进行自动收货以及自动评价', 
+  is_settlement tinyint COMMENT '是否结算\;0.待结算订单\; 1.已结算订单\;', 
+  is_delete tinyint COMMENT '订单评价的状态:0.未删除\;  1.已删除\;(默认0)', 
+  evaluation_state tinyint COMMENT '订单评价的状态:0.未评价\;  1.已评价\;(默认0)', 
+  way string COMMENT '取货方式:SELF自提\;SHOP店铺负责配送', 
+  is_stock_up int COMMENT '是否需要备货 0：不需要    1：需要    2:平台确认备货  3:已完成备货 4平台已经将货物送至店铺 ', 
+  create_user string, 
+  create_time string, 
+  update_user string, 
+  update_time string, 
+  is_valid tinyint COMMENT '是否有效  0: false\; 1: true\;   订单是否有效的标志',
+  end_date string COMMENT '拉链结束日期')
+COMMENT '订单表'
+partitioned by (start_date string)
+clustered by(id) sorted by(id) into 10 buckets 
+row format delimited fields terminated by '\t' 
+stored as orc 
+tblproperties ('orc.compress' = 'SNAPPY');
+
+--订单详情表（拉链表）
+DROP TABLE if EXISTS guangzhou10_zhaochunzhang_dwd.fact_shop_order_address_detail;
+CREATE TABLE guangzhou10_zhaochunzhang_dwd.fact_shop_order_address_detail(
+  id string COMMENT '关联订单的id', 
+  order_amount decimal(36,2) COMMENT '订单总金额:购买总金额-优惠金额', 
+  discount_amount decimal(36,2) COMMENT '优惠金额', 
+  goods_amount decimal(36,2) COMMENT '用户购买的商品的总金额+运费', 
+  is_delivery string COMMENT '0.自提；1.配送', 
+  buyer_notes string COMMENT '买家备注留言', 
+  pay_time string, 
+  receive_time string, 
+  delivery_begin_time string, 
+  arrive_store_time string, 
+  arrive_time string COMMENT '订单完成时间,当配送员点击确认送达时,进行更新订单完成时间,后期需要根据订单完成时间,进行自动收货以及自动评价', 
+  create_user string, 
+  create_time string, 
+  update_user string, 
+  update_time string, 
+  is_valid tinyint COMMENT '是否有效  0: false\; 1: true\;   订单是否有效的标志',
+  end_date string COMMENT '拉链结束日期')
+COMMENT '订单详情表'
+partitioned by (start_date string)
+clustered by(id) sorted by(id) into 10 buckets 
+row format delimited fields terminated by '\t' 
+stored as orc 
+tblproperties ('orc.compress' = 'SNAPPY');
+
+--订单结算表
+DROP TABLE if exists guangzhou10_zhaochunzhang_dwd.fact_order_settle;
+CREATE TABLE guangzhou10_zhaochunzhang_dwd.fact_order_settle(
+  id string COMMENT '结算单号', 
+  order_id string, 
+  settlement_create_date string COMMENT '用户申请结算的时间', 
+  settlement_amount decimal(36,2) COMMENT '如果发生退款,则结算的金额 = 订单的总金额 - 退款的金额', 
+  dispatcher_user_id string COMMENT '配送员id', 
+  dispatcher_money decimal(36,2) COMMENT '配送员的配送费(配送员的运费(如果退货方式为1:则买家支付配送费))', 
+  circle_master_user_id string COMMENT '圈主id', 
+  circle_master_money decimal(36,2) COMMENT '圈主分润的金额', 
+  plat_fee decimal(36,2) COMMENT '平台应得的分润', 
+  store_money decimal(36,2) COMMENT '商家应得的订单金额', 
+  status tinyint COMMENT '0.待结算；1.待审核 \; 2.完成结算；3.拒绝结算', 
+  note string COMMENT '原因', 
+  settle_time string COMMENT ' 结算时间', 
+  create_user string, 
+  create_time string, 
+  update_user string, 
+  update_time string, 
+  is_valid tinyint COMMENT '是否有效  0: false\; 1: true\;   订单是否有效的标志', 
+  first_commission_user_id string COMMENT '一级分佣用户', 
+  first_commission_money decimal(36,2) COMMENT '一级分佣金额', 
+  second_commission_user_id string COMMENT '二级分佣用户', 
+  second_commission_money decimal(36,2) COMMENT '二级分佣金额',
+  end_date string COMMENT '拉链结束日期')
+COMMENT '订单结算表'
+partitioned by (start_date string)
+row format delimited fields terminated by '\t' 
+stored as orc 
+tblproperties ('orc.compress' = 'SNAPPY');
+
+
+--退款订单表（拉链表）
+DROP TABLE if exists guangzhou10_zhaochunzhang_dwd.fact_refund_order;
+CREATE TABLE guangzhou10_zhaochunzhang_dwd.fact_refund_order
+(
+    id                   string COMMENT '退款单号',
+    order_id             string COMMENT '订单的id',
+    apply_date           string COMMENT '用户申请退款的时间',
+    modify_date          string COMMENT '退款订单更新时间',
+    refund_reason        string COMMENT '买家退款原因',
+    refund_amount        DECIMAL(11,2) COMMENT '订单退款的金额',
+    refund_state         TINYINT COMMENT '1.申请退款;2.拒绝退款; 3.同意退款,配送员配送; 4:商家同意退款,用户亲自送货 ;5.退款完成',
+    refuse_refund_reason string COMMENT '商家拒绝退款原因',
+    refund_goods_type    string COMMENT '1.上门取货(买家承担运费); 2.买家送达;',
+    refund_shipping_fee  DECIMAL(11,2) COMMENT '配送员的运费(如果退货方式为1:则买家支付配送费)',
+    create_user          string,
+    create_time          string,
+    update_user          string,
+    update_time          string,
+    is_valid             TINYINT COMMENT '是否有效  0: false; 1: true;   订单是否有效的标志',
+    end_date string COMMENT '拉链结束日期'
+)
+comment '退款订单表'
+partitioned by (start_date string)
+row format delimited fields terminated by '\t' 
+stored as orc 
+tblproperties ('orc.compress' = 'SNAPPY');
+
+
+
+--订单组表（拉链表）
+DROP TABLE if EXISTS guangzhou10_zhaochunzhang_dwd.fact_shop_order_group;
+CREATE TABLE guangzhou10_zhaochunzhang_dwd.fact_shop_order_group(
+  id string, 
+  order_id string COMMENT '订单id', 
+  group_id string COMMENT '订单分组id', 
+  is_pay tinyint COMMENT '是否已支付,0未支付,1已支付', 
+  create_user string, 
+  create_time string, 
+  update_user string, 
+  update_time string, 
+  is_valid tinyint,
+  end_date string COMMENT '拉链结束日期')
+COMMENT '订单组'
+partitioned by (start_date string)
+row format delimited fields terminated by '\t' 
+stored as orc 
+tblproperties ('orc.compress' = 'SNAPPY');
+
+--订单组支付（拉链表）
+DROP TABLE if EXISTS guangzhou10_zhaochunzhang_dwd.fact_order_pay;
+CREATE TABLE guangzhou10_zhaochunzhang_dwd.fact_order_pay(
+  id string, 
+  group_id string COMMENT '关联shop_order_group的group_id,一对多订单', 
+  order_pay_amount decimal(36,2) COMMENT '订单总金额\;', 
+  create_date string COMMENT '订单创建的时间,需要根据订单创建时间进行判断订单是否已经失效', 
+  create_user string, 
+  create_time string, 
+  update_user string, 
+  update_time string, 
+  is_valid tinyint COMMENT '是否有效  0: false\; 1: true\;   订单是否有效的标志')
+COMMENT '订单组支付表'
+partitioned by (dt string)
+row format delimited fields terminated by '\t' 
+stored as orc 
+tblproperties ('orc.compress' = 'SNAPPY');
+
+
+--订单商品快照(拉链表)
+DROP TABLE if EXISTS guangzhou10_zhaochunzhang_dwd.fact_shop_order_goods_details;
+CREATE TABLE guangzhou10_zhaochunzhang_dwd.fact_shop_order_goods_details(
+  id string COMMENT 'id主键', 
+  order_id string COMMENT '对应订单表的id', 
+  shop_store_id string COMMENT '卖家店铺ID', 
+  buyer_id string COMMENT '购买用户ID', 
+  goods_id string COMMENT '购买商品的id', 
+  buy_num int COMMENT '购买商品的数量', 
+  goods_price decimal(36,2) COMMENT '购买商品的价格', 
+  total_price decimal(36,2) COMMENT '购买商品的价格 = 商品的数量 * 商品的单价 ', 
+  goods_name string COMMENT '商品的名称', 
+  goods_image string COMMENT '商品的图片', 
+  goods_specification string COMMENT '商品规格', 
+  goods_weight int, 
+  goods_unit string COMMENT '商品计量单位', 
+  goods_type string COMMENT '商品分类     ytgj:进口商品    ytsc:普通商品     hots爆品', 
+  refund_order_id string COMMENT '退款订单的id', 
+  goods_brokerage decimal(36,2) COMMENT '商家设置的商品分润的金额', 
+  is_refund tinyint COMMENT '0.不退款\; 1.退款', 
+  create_user string, 
+  create_time string, 
+  update_user string, 
+  update_time string, 
+  is_valid tinyint COMMENT '是否有效  0: false\; 1: true',
+  end_date string COMMENT '拉链结束日期')
+COMMENT '订单商品快照'
+partitioned by (start_date string)
+row format delimited fields terminated by '\t' 
+stored as orc 
+tblproperties ('orc.compress' = 'SNAPPY');
+
+
+--订单评价表（增量表，与ODS一致）
+DROP TABLE if EXISTS guangzhou10_zhaochunzhang_dwd.fact_goods_evaluation;
+CREATE TABLE guangzhou10_zhaochunzhang_dwd.fact_goods_evaluation(
+  id string, 
+  user_id string COMMENT '评论人id', 
+  store_id string COMMENT '店铺id', 
+  order_id string COMMENT '订单id', 
+  geval_scores int COMMENT '综合评分', 
+  geval_scores_speed int COMMENT '送货速度评分0-5分(配送评分)', 
+  geval_scores_service int COMMENT '服务评分0-5分', 
+  geval_isanony tinyint COMMENT '0-匿名评价，1-非匿名', 
+  create_user string, 
+  create_time string, 
+  update_user string, 
+  update_time string, 
+  is_valid tinyint COMMENT '0 ：失效，1 ：开启')
+COMMENT '订单评价表'
+partitioned by (dt string)
+row format delimited fields terminated by '\t'
+stored as orc 
+tblproperties ('orc.compress' = 'SNAPPY');
+
+
+--商品评价表（拉链表）
+DROP TABLE if EXISTS guangzhou10_zhaochunzhang_dwd.fact_goods_evaluation_detail;
+CREATE TABLE guangzhou10_zhaochunzhang_dwd.fact_goods_evaluation_detail(
+  id string, 
+  user_id string COMMENT '评论人id', 
+  store_id string COMMENT '店铺id', 
+  goods_id string COMMENT '商品id', 
+  order_id string COMMENT '订单id', 
+  order_goods_id string COMMENT '订单商品表id', 
+  geval_scores_goods int COMMENT '商品评分0-10分', 
+  geval_content string, 
+  geval_content_superaddition string COMMENT '追加评论', 
+  geval_addtime string COMMENT '评论时间', 
+  geval_addtime_superaddition string COMMENT '追加评论时间', 
+  geval_state tinyint COMMENT '评价状态 1-正常 0-禁止显示', 
+  geval_remark string COMMENT '管理员对评价的处理备注', 
+  revert_state tinyint COMMENT '回复状态0未回复1已回复', 
+  geval_explain string COMMENT '管理员回复内容', 
+  geval_explain_superaddition string COMMENT '管理员追加回复内容', 
+  geval_explaintime string COMMENT '管理员回复时间', 
+  geval_explaintime_superaddition string COMMENT '管理员追加回复时间', 
+  create_user string, 
+  create_time string, 
+  update_user string, 
+  update_time string, 
+  is_valid tinyint COMMENT '0 ：失效，1 ：开启',
+  end_date string COMMENT '拉链结束日期')
+COMMENT '商品评价明细'
+partitioned by (start_date string)
+row format delimited fields terminated by '\t'
+stored as orc 
+tblproperties ('orc.compress' = 'SNAPPY');
+
+
+--配送表（拉链表）
+DROP TABLE if EXISTS guangzhou10_zhaochunzhang_dwd.fact_order_delievery_item;
+CREATE TABLE guangzhou10_zhaochunzhang_dwd.fact_order_delievery_item(
+  id string COMMENT '主键id', 
+  shop_order_id string COMMENT '订单表ID', 
+  refund_order_id string, 
+  dispatcher_order_type tinyint COMMENT '配送订单类型1.支付单\; 2.退款单', 
+  shop_store_id string COMMENT '卖家店铺ID', 
+  buyer_id string COMMENT '购买用户ID', 
+  circle_master_user_id string COMMENT '圈主ID', 
+  dispatcher_user_id string COMMENT '配送员ID', 
+  dispatcher_order_state tinyint COMMENT '配送订单状态:0.待接单.1.已接单,2.已到店.3.配送中 4.商家普通提货码完成订单.5.商家万能提货码完成订单。6，买家完成订单', 
+  order_goods_num tinyint COMMENT '订单商品的个数', 
+  delivery_fee decimal(36,2) COMMENT '配送员的运费', 
+  distance int COMMENT '配送距离', 
+  dispatcher_code string COMMENT '收货码', 
+  receiver_name string COMMENT '收货人姓名', 
+  receiver_phone string COMMENT '收货人电话', 
+  sender_name string COMMENT '发货人姓名', 
+  sender_phone string COMMENT '发货人电话', 
+  create_user string, 
+  create_time string, 
+  update_user string, 
+  update_time string, 
+  is_valid tinyint COMMENT '是否有效  0: false\; 1: true',
+  end_date string COMMENT '拉链结束日期')
+COMMENT '订单配送详细信息表'
+partitioned by (start_date string)
+row format delimited fields terminated by '\t'
+stored as orc 
+tblproperties ('orc.compress' = 'SNAPPY');
+
+--登录记录表（增量表，与ODS一致）
+DROP TABLE if exists guangzhou10_zhaochunzhang_dwd.fact_user_login;
+CREATE TABLE guangzhou10_zhaochunzhang_dwd.fact_user_login(
+  id string,
+  login_user string,
+  login_type string COMMENT '登录类型（登陆时使用）',
+  client_id string COMMENT '推送标示id(登录、第三方登录、注册、支付回调、给用户推送消息时使用)',
+  login_time string,
+  login_ip string,
+  logout_time string
+)
+COMMENT '用户登录记录表'
+partitioned by (dt string)
+row format delimited fields terminated by '\t'
+stored as orc
+tblproperties ('orc.compress' = 'SNAPPY');
+
+
+--购物车（拉链表）
+DROP TABLE if exists guangzhou10_zhaochunzhang_dwd.fact_shop_cart;
+CREATE TABLE guangzhou10_zhaochunzhang_dwd.fact_shop_cart
+(
+    id            string COMMENT '主键id',
+    shop_store_id string COMMENT '卖家店铺ID',
+    buyer_id      string COMMENT '购买用户ID',
+    goods_id      string COMMENT '购买商品的id',
+    buy_num       INT COMMENT '购买商品的数量',
+    create_user   string,
+    create_time   string,
+    update_user   string,
+    update_time   string,
+    is_valid      TINYINT COMMENT '是否有效  0: false; 1: true',
+  end_date string COMMENT '拉链结束日期')
+comment '购物车'
+partitioned by (start_date string)
+row format delimited fields terminated by '\t'
+stored as orc
+tblproperties ('orc.compress' = 'SNAPPY');
+
+
+--收藏店铺记录（拉链表）
+DROP TABLE if exists guangzhou10_zhaochunzhang_dwd.fact_store_collect;
+CREATE TABLE guangzhou10_zhaochunzhang_dwd.fact_store_collect
+(
+    id          string,
+    user_id     string COMMENT '收藏人id',
+    store_id    string COMMENT '店铺id',
+    create_user string,
+    create_time string,
+    update_user string,
+    update_time string,
+    is_valid    TINYINT COMMENT '0 ：失效，1 ：开启',
+  end_date string COMMENT '拉链结束日期')
+comment '收藏店铺记录表'
+partitioned by (start_date string)
+row format delimited fields terminated by '\t'
+stored as orc
+tblproperties ('orc.compress' = 'SNAPPY');
+
+
+--商品收藏（拉链表）
+DROP TABLE if exists guangzhou10_zhaochunzhang_dwd.fact_goods_collect;
+CREATE TABLE guangzhou10_zhaochunzhang_dwd.fact_goods_collect
+(
+    id          string,
+    user_id     string COMMENT '收藏人id',
+    goods_id    string COMMENT '商品id',
+    store_id    string COMMENT '通过哪个店铺收藏的（因主店分店概念存在需要）',
+    create_user string,
+    create_time string,
+    update_user string,
+    update_time string,
+    is_valid    TINYINT COMMENT '0 ：失效，1 ：开启',
+  end_date string COMMENT '拉链结束日期')
+comment '收藏商品记录表'
+partitioned by (start_date string)
+row format delimited fields terminated by '\t'
+stored as orc
+tblproperties ('orc.compress' = 'SNAPPY');
+
+--交易记录（拉链表）
+DROP TABLE if exists guangzhou10_zhaochunzhang_dwd.fact_trade_record;
+CREATE TABLE guangzhou10_zhaochunzhang_dwd.fact_trade_record
+(
+    id                   string COMMENT '交易单号',
+    external_trade_no    string COMMENT '(支付,结算.退款)第三方交易单号',
+    relation_id          string COMMENT '关联单号',
+    trade_type           TINYINT COMMENT '1.支付订单; 2.结算订单; 3.退款订单；4.充值单；5.提现单；6.分销单；7缴纳保证金单8退还保证金单9,冻结通联订单，10通联通账户余额充值，11.扫码单',
+    status               TINYINT COMMENT '1.成功;2.失败;3.进行中',
+    finnshed_time        string COMMENT '订单完成时间,当配送员点击确认送达时,进行更新订单完成时间,后期需要根据订单完成时间,进行自动收货以及自动评价',
+    fail_reason          string COMMENT '交易失败的原因',
+    payment_type         string COMMENT '支付方式:小程序,app微信,支付宝,快捷支付,钱包，银行卡,消费券',
+    trade_before_balance DECIMAL(11,2) COMMENT '交易前余额',
+    trade_true_amount    DECIMAL(11,2) COMMENT '交易实际支付金额,第三方平台扣除优惠以后实际支付金额',
+    trade_after_balance  DECIMAL(11,2) COMMENT '交易后余额',
+    note                 string COMMENT '业务说明',
+    user_card            string COMMENT '第三方平台账户标识/多钱包用户钱包id',
+    user_id              string COMMENT '用户id',
+    aip_user_id          string COMMENT '钱包id',
+    create_user          string,
+    create_time          string,
+    update_user          string,
+    update_time          string,
+    is_valid             TINYINT COMMENT '是否有效  0: false; 1: true;   订单是否有效的标志',
+  end_date string COMMENT '拉链结束日期')
+comment '交易记录'
+partitioned by (start_date string)
+row format delimited fields terminated by '\t'
+stored as orc
+tblproperties ('orc.compress' = 'SNAPPY');
+
+
+CREATE TABLE IF NOT EXISTS oe_dwd.fact_customer_clue (
+  id int COMMENT 'customer_clue_id',
+  create_date_time STRING COMMENT '创建时间',
+  update_date_time STRING COMMENT '最后更新时间',
+  deleted STRING COMMENT '是否被删除（禁用）',
+  customer_id int COMMENT '客户id',
+  customer_relationship_id int COMMENT '客户关系id',
+  session_id STRING COMMENT '七陌会话id',
+  sid STRING COMMENT '访客id',
+  status STRING COMMENT '状态（undeal待领取 deal 已领取 finish 已关闭 changePeer 已流转）',
+  users STRING COMMENT '所属坐席',
+  create_time STRING COMMENT '七陌创建时间',
+  platform STRING COMMENT '平台来源 （pc-网站咨询|wap-wap咨询|sdk-app咨询|weixin-微信咨询）',
+  s_name STRING COMMENT '用户名称',
+  seo_source STRING COMMENT '搜索来源',
+  seo_keywords STRING COMMENT '关键字',
+  ip STRING COMMENT 'IP地址',
+  referrer STRING COMMENT '上级来源页面',
+  from_url STRING COMMENT '会话来源页面',
+  landing_page_url STRING COMMENT '访客着陆页面',
+  url_title STRING COMMENT '咨询页面title',
+  to_peer STRING COMMENT '所属技能组',
+  manual_time STRING COMMENT '人工开始时间',
+  begin_time STRING COMMENT '坐席领取时间 ',
+  reply_msg_count int COMMENT '客服回复消息数',
+  total_msg_count int COMMENT '消息总数',
+  msg_count int COMMENT '客户发送消息数',
+  comment STRING COMMENT '备注',
+  finish_reason STRING COMMENT '结束类型',
+  finish_user STRING COMMENT '结束坐席',
+  end_time STRING COMMENT '会话结束时间',
+  platform_description STRING COMMENT '客户平台信息',
+  browser_name STRING COMMENT '浏览器名称',
+  os_info STRING COMMENT '系统名称',
+  area STRING COMMENT '区域',
+  country STRING COMMENT '所在国家',
+  province STRING COMMENT '省',
+  city STRING COMMENT '城市',
+  creator int COMMENT '创建人',
+  name STRING COMMENT '客户姓名',
+  idcard STRING COMMENT '身份证号',
+  phone STRING COMMENT '手机号',
+  itcast_school_id int COMMENT '校区Id',
+  itcast_school STRING COMMENT '校区',
+  itcast_subject_id int COMMENT '学科Id',
+  itcast_subject STRING COMMENT '学科',
+  wechat STRING COMMENT '微信',
+  qq STRING COMMENT 'qq号',
+  email STRING COMMENT '邮箱',
+  gender STRING COMMENT '性别',
+  level STRING COMMENT '客户级别',
+  origin_type STRING COMMENT '数据来源渠道',
+  information_way STRING COMMENT '资讯方式',
+  working_years STRING COMMENT '开始工作时间',
+  technical_directions STRING COMMENT '技术方向',
+  customer_state STRING COMMENT '当前客户状态',
+  valid STRING COMMENT '该线索是否是网资有效线索',
+  anticipat_signup_date STRING COMMENT '预计报名时间',
+  clue_state STRING COMMENT '线索状态',
+  scrm_department_id int COMMENT 'SCRM内部部门id',
+  superior_url STRING COMMENT '诸葛获取上级页面URL',
+  superior_source STRING COMMENT '诸葛获取上级页面URL标题',
+  landing_url STRING COMMENT '诸葛获取着陆页面URL',
+  landing_source STRING COMMENT '诸葛获取着陆页面URL来源',
+  info_url STRING COMMENT '诸葛获取留咨页URL',
+  info_source STRING COMMENT '诸葛获取留咨页URL标题',
+  origin_channel STRING COMMENT '投放渠道',
+  course_id int COMMENT '课程编号',
+  course_name STRING COMMENT '课程名称',
+  zhuge_session_id STRING COMMENT 'zhuge会话id',
+  is_repeat int COMMENT '是否重复线索(手机号维度) 0:正常 1：重复',
+  tenant int COMMENT '租户id',
+  activity_id STRING COMMENT '活动id',
+  activity_name STRING COMMENT '活动名称',
+  follow_type int COMMENT '分配类型，0-自动分配，1-手动分配，2-自动转移，3-手动单个转移，4-手动批量转移，5-公海领取',
+  shunt_mode_id int COMMENT '匹配到的技能组id',
+  shunt_employee_group_id int COMMENT '所属分流员工组',
+  ends_time STRING COMMENT '有效时间')
+comment '客户关系表'
+PARTITIONED BY(starts_time STRING)
+clustered by(customer_relationship_id) sorted by(customer_relationship_id) into 10 buckets
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+stored as orc
+TBLPROPERTIES ('orc.compress'='SNAPPY');
+
+CREATE TABLE IF NOT EXISTS oe_dwd.dim_calendar (
+    id int comment 'id',
+    datelist string comment '日历时间',
+    dt string
+)
+comment '日历'
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+stored as orc
+TBLPROPERTIES ('orc.compress'='SNAPPY');
+
+CREATE TABLE IF NOT EXISTS oe_dwd.fact_itcast_subject(
+    id int,
+    create_date_time timestamp COMMENT '创建时间',
+    update_date_time timestamp COMMENT '最后更新时间',
+    deleted int COMMENT '是否被禁用',
+    name string COMMENT '学科名',
+    code string,
+    tenant int
+)
+comment '学科表'
+PARTITIONED BY(dt STRING)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+stored as orc
+TBLPROPERTIES ('orc.compress'='SNAPPY');
+
+CREATE TABLE IF NOT EXISTS oe_dwd.dim_course_table_upload_detail
+(
+    id                  int       comment 'id',
+    base_id             int         comment '课程主表id',
+    class_id            int         comment '班级id',
+    class_date          STRING      comment '上课日期',
+    content             STRING     comment '课程内容',
+    teacher_id          int         comment '老师id',
+    teacher_name        STRING     comment '老师名字',
+    job_number          STRING     comment '工号',
+    classroom_id        int         comment '教室id',
+    classroom_name      STRING     comment '教室名称',
+    is_outline          int         comment '是否大纲 0 否 1 是',
+    class_mode          int         comment '上课模式 0 传统全天 1 AB上午 2 AB下午 3 线上直播',
+    is_stage_exam       int         comment '是否阶段考试（0：否 1：是）',
+    is_pay              int         comment '代课费（0：无 1：有）',
+    tutor_teacher_id    int         comment '晚自习辅导老师id',
+    tutor_teacher_name  STRING     comment '辅导老师姓名',
+    tutor_job_number    STRING     comment '晚自习辅导老师工号',
+    is_subsidy          int         comment '晚自习补贴（0：无 1：有）',
+    answer_teacher_id   int         comment '答疑老师id',
+    answer_teacher_name STRING     comment '答疑老师姓名',
+    answer_job_number   STRING     comment '答疑老师工号',
+    remark              STRING        comment '备注',
+    create_time         STRING      comment '创建时间')
+comment '班级课表明细表'
+PARTITIONED BY (dt STRING)
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY '\t'
+stored as orcfile
+TBLPROPERTIES ('orc.compress'='SNAPPY','orc.bloom.filter.columns'='class_id,class_date');
+
+DROP TABLE oe_dwd.fact_tbh_student_signin_record;
+CREATE TABLE IF NOT EXISTS oe_dwd.fact_tbh_student_signin_record (
+    id                int,
+    normal_class_flag string           comment '是否正课 1 正课 2 自习 3 休息',
+    time_table_id     int           comment '作息时间id normal_class_flag=2 关联tbh_school_time_table 或者 normal_class_flag=1 关联 tbh_class_time_table',
+    class_id          int           comment '班级id',
+    student_id        int           comment '学员id',
+    signin_time       String       comment '签到时间',
+    signin_date       String          comment '签到日期',
+    inner_flag        STRING           comment '内外网标志  0 外网 1 内网',
+    signin_type       STRING           comment '签到类型 1 心跳打卡 2 老师补卡 3 直播打卡',
+    share_state       STRING            comment '共享屏幕状态 0 否 1是  在上午或下午段有共屏记录，则该段所有记录该字段为1，内网默认为1 外网默认为0   (暂不用)',
+    inner_ip          String          comment '内网ip地址',
+    create_time       String       comment '创建时间')
+comment '学生打卡记录表'
+PARTITIONED BY (dt STRING)
+clustered by(class_id,signin_date,id) sorted by(class_id,signin_date,id) into 10 buckets
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY '\t'
+stored as orcfile
+TBLPROPERTIES ('orc.compress'='SNAPPY','orc.bloom.filter.columns'='time_table_id,class_id,signin_date,share_state');
+
+-- 建库
+create database if not EXISTS oe_dwd;
+
+
+-- 事实表
+-- 客户静态信息表
+DROP TABLE if EXISTS oe_dwd.fact_customer;
+
+create table oe_dwd.fact_customer
+(
+    id                       int,
+    customer_relationship_id int comment '当前意向id',
+    create_date_time         string comment '创建时间',
+    update_date_time         string comment '最后更新时间',
+    deleted                  int comment '是否被删除（禁用）',
+    name                     string comment '姓名',
+    idcard                   string comment '身份证号',
+    birth_year               int comment '出生年份',
+    gender                   string comment '性别',
+    phone                    string comment '手机号',
+    wechat                   string comment '微信',
+    qq                       string comment 'qq号',
+    email                    string comment '邮箱',
+    area                     string comment '所在区域',
+    leave_school_date        string comment '离校时间',
+    graduation_date          string comment '毕业时间',
+    bxg_student_id           string comment '博学谷学员ID，可能未关联到，不存在',
+    creator                  int comment '创建人ID',
+    origin_type              string comment '数据来源',
+    origin_channel           string comment '来源渠道',
+    tenant                   int,
+    md_id                    int comment '中台id'
+)COMMENT '客户静态信息表'
+partitioned by (dt string)
+clustered by(id) sorted by(id) into 10 buckets
+row format delimited fields terminated by '\t'
+stored as orc
+tblproperties ('orc.compress' = 'SNAPPY');
+
+
+-- 维度表
+-- 员工信息表
+DROP TABLE if EXISTS oe_dwd.dim_employee;
+create table oe_dwd.dim_employee
+(
+    id                  int,
+    email               string comment '公司邮箱，OA登录账号',
+    real_name           string comment '员工的真实姓名',
+    phone               string comment '手机号，目前还没有使用；隐私问题OA接口没有提供这个属性，',
+    department_id       string comment 'OA中的部门编号，有负值',
+    department_name     string comment 'OA中的部门名',
+    remote_login        int comment '员工是否可以远程登录',
+    job_number          string comment '员工工号',
+    cross_school        int comment '是否有跨校区权限',
+    last_login_date     string comment '最后登录日期',
+    creator             int comment '创建人',
+    create_date_time    string comment '创建时间',
+    update_date_time    string comment '最后更新时间',
+    deleted             int comment '是否被删除（禁用）',
+    scrm_department_id  int comment 'SCRM内部部门id',
+    leave_office        int comment '离职状态',
+    leave_office_time   string comment '离职时间',
+    reinstated_time     string comment '复职时间',
+    superior_leaders_id int comment '上级领导ID',
+    tdepart_id          int comment '直属部门',
+    tenant              int,
+    ems_user_name       string
+)comment '员工信息表'
+partitioned by (dt string)
+
+row format delimited fields terminated by '\t'
+stored as orc
+tblproperties ('orc.compress' = 'SNAPPY');
+
+
+
+-- 部门表
+DROP TABLE if EXISTS oe_dwd.dim_scrm_department;
+
+create table oe_dwd.dim_scrm_department
+(
+    id               int comment '部门id',
+    name             string comment '部门名称',
+    parent_id        int comment '父部    门id',
+    create_date_time string comment '创建时间',
+    update_date_time string comment '更新时间',
+    deleted          int comment '删除标志',
+    id_path          string comment '编码全路径',
+    tdepart_code     int comment '直属部门',
+    creator          string comment '创建者',
+    depart_level     int comment '部门层级',
+    depart_sign      int comment '部门标志，暂时默认1',
+    depart_line      int comment '业务线，存储业务线编码',
+    depart_sort      int comment '排序字段',
+    disable_flag     int comment '禁用标志',
+    tenant           int
+)comment '部门表'
+partitioned by (dt string)
+
+row format delimited fields terminated by '\t'
+stored as orc
+tblproperties ('orc.compress' = 'SNAPPY');
+
+
+
+-- 课程报名表
+DROP TABLE if EXISTS oe_dwd.dim_itcast_clazz;
+create table oe_dwd.dim_itcast_clazz
+(
+    id                  int comment 'ems课程id(非自增)',
+    create_date_time    string comment '创建时间',
+    update_date_time    string comment '最后更新时间',
+    deleted             int comment '是否被删除（禁用）',
+    itcast_school_id    string comment 'ems校区ID',
+    itcast_school_name  string comment 'ems校区名称',
+    itcast_subject_id   string comment 'ems学科ID',
+    itcast_subject_name string comment 'ems学科名称',
+    itcast_brand        string comment 'ems品牌',
+    clazz_type_state    string comment '班级类型状态',
+    clazz_type_name     string comment '班级类型名称',
+    teaching_mode       string comment '授课模式',
+    start_time          string comment '开班时间',
+    end_time            string comment '毕业时间',
+    comment             string comment '备注',
+    detail              string comment '详情(比如：27期)',
+    uncertain           int comment '待定班(0:否,1:是)',
+    tenant              int
+)comment '课程报名表'
+partitioned by (dt string)
+
+row format delimited fields terminated by '\t'
+stored as orc
+tblproperties ('orc.compress' = 'SNAPPY');
+
+
+
+create table dim_web_chat_text_ems_2019_07
+(
+    id                   int              comment '主键',
+        
+    referrer             string   comment '上级来源页面',
+    from_url             string   comment '会话来源页面',
+    landing_page_url     string   comment '访客着陆页面',
+    url_title            string   comment '咨询页面title',
+    platform_description string   comment '客户平台信息',
+    other_params         string   comment '扩展字段中数据',
+    history              string   comment '历史访问记录'
+
+)   comment '访问咨询表'
+partitioned by(dt string)
+row format delimited fields terminated by '\t'
+stored as orc
+TBLPROPERTIES('orc.compress'='SNAPPY' );
+drop table web_chat_text_ems_2019_07
+
+
+create table dim_web_chat_text_ems_2019_07
+(
+    id                   int              comment '主键',
+        
+    referrer             string   comment '上级来源页面',
+    from_url             string   comment '会话来源页面',
+    landing_page_url     string   comment '访客着陆页面',
+    url_title            string   comment '咨询页面title',
+    platform_description string   comment '客户平台信息',
+    other_params         string   comment '扩展字段中数据',
+    history              string   comment '历史访问记录'
+
+)   comment '访问咨询表'
+partitioned by(dt string)
+row format delimited fields terminated by '\t'
+stored as orc
+TBLPROPERTIES('orc.compress'='SNAPPY' );
+drop table web_chat_text_ems_2019_07
+
+
+
+

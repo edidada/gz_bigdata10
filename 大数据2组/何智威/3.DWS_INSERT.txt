@@ -1,0 +1,336 @@
+with temp as(
+    select
+        class_id,
+        class_date,
+        --总人数
+        tea.studying_student_count,
+        --学生id
+        tea.t5_student_id,
+        --签到时间
+        signin_time,
+        --请假信息
+        student_id,
+        tea.begin_time,
+        tea.end_time,
+        --请假人数的去重
+        row_number() over (partition by student_id order by tea.begin_time asc) student_id_one,
+        
+        
+        
+        --出勤人数的去重
+        row_number() over (partition by t5_student_id order by signin_time asc) t5_student_id_one,
+        --时间段
+        case
+        when (substring (signin_time,12,8) between substr(FROM_UNIXTIME(UNIX_TIMESTAMP(concat('1900-12-12 ',tea.morning_begin_time))-2400),12,8) and tea.morning_end_time) or student_id is not null
+        then '早上出勤'
+        when (substring (signin_time,12,8) between substr(FROM_UNIXTIME(UNIX_TIMESTAMP(concat('1900-12-12 ',tea.afternoon_begin_time))-2400),12,8) and tea.afternoon_end_time)
+        then '下午出勤'
+        when (substring (signin_time,12,8) between substr(FROM_UNIXTIME(UNIX_TIMESTAMP(concat('1900-12-12 ',tea.evening_begin_time))-2400),12,8) and tea.evening_end_time)
+        then '晚上出勤'
+        else '无效打卡时间'
+        end
+        as time_quantum,
+        
+        
+        --打卡状态
+        case
+        when (substring (signin_time,12,8) between substr(FROM_UNIXTIME(UNIX_TIMESTAMP(concat('1900-12-12 ',tea.morning_begin_time))-2400),12,8) and substr(FROM_UNIXTIME(UNIX_TIMESTAMP(concat('1900-12-12 ',tea.morning_begin_time))+600),12,8))
+        then '早上正常出勤'
+        when (substring (signin_time,12,8) between substr(FROM_UNIXTIME(UNIX_TIMESTAMP(concat('1900-12-12 ',tea.morning_begin_time))+600),12,8) and tea.morning_end_time)
+        then '早上迟到出勤'
+        
+        when (substring (signin_time,12,8) between substr(FROM_UNIXTIME(UNIX_TIMESTAMP(concat('1900-12-12 ',tea.afternoon_begin_time))-2400),12,8) and substr(FROM_UNIXTIME(UNIX_TIMESTAMP(concat('1900-12-12 ',tea.afternoon_begin_time))+600),12,8))
+        then '下午正常出勤'
+        when (substring (signin_time,12,8) between substr(FROM_UNIXTIME(UNIX_TIMESTAMP(concat('1900-12-12 ',tea.afternoon_begin_time))+600),12,8) and tea.afternoon_end_time)
+        then '下午迟到出勤'
+        
+        when (substring (signin_time,12,8) between substr(FROM_UNIXTIME(UNIX_TIMESTAMP(concat('1900-12-12 ',tea.evening_begin_time))-2400),12,8) and substr(FROM_UNIXTIME(UNIX_TIMESTAMP(concat('1900-12-12 ',tea.evening_begin_time))+600),12,8))
+        then '晚上正常出勤'
+        when (substring (signin_time,12,8) between substr(FROM_UNIXTIME(UNIX_TIMESTAMP(concat('1900-12-12 ',tea.evening_begin_time))+600),12,8) and tea.evening_end_time)
+        then '晚上迟到出勤'
+        
+        
+        end
+        as clock_state,
+    
+    
+        --当天
+        tea.class_date the_day,
+        substring (tea.class_date,1,7) the_month,
+        substring (tea.class_date,1,4) the_year
+
+
+from oe_dwb.teach_final tea
+)
+insert into table oe_dws.attendance_theme partition(dt)
+select
+    class_date,
+    --班级id
+    class_id,
+    --学生id
+    null t5_student_id,
+    -- 总人数
+    max(studying_student_count) all_people,
+    
+    --time_quantum,
+    
+    --早上
+    --'早上' morning,
+    
+    --早上出勤人数
+    count(
+        distinct
+        --grouping__id = 6 为班级
+        case 
+        when  time_quantum = '早上出勤' then t5_student_id
+        else null
+        end 
+    ) morning_attendance_number,
+
+    -- --早上出勤率
+    
+    
+    -- --早上迟到人数
+    count(
+        case 
+        when clock_state = '早上迟到出勤' and t5_student_id_one = 1 then t5_student_id
+        else null
+        end 
+    ) morning_lated_number,
+    
+    
+    --早上迟到率
+
+    --早上请假人数
+    count(
+        distinct
+        case 
+        when  student_id is not null then student_id
+        else null
+        end 
+    )  morning_leave_number,
+    
+    --早上请假率
+    
+    --早上旷课人数
+    
+    --早上旷课人数率
+   
+      --下午出勤人数
+    count(
+        distinct
+        case 
+        when time_quantum = '下午出勤' then t5_student_id
+        else null
+        end 
+    ) afternoon_attendance_number,
+
+    -- --下午出勤率
+    
+    
+    -- --下午迟到人数
+    count(
+        case 
+        when clock_state = '下午迟到出勤' and t5_student_id_one = 1 then t5_student_id
+        else null
+        end 
+    ) afternoon_lated_number,
+    
+    
+    --下午迟到率
+
+    --下午请假人数
+    count(
+        distinct
+        case 
+        when  student_id is not null then student_id
+        else null
+        end 
+    )  afternoon_leave_number,
+    
+    --下午请假率
+    
+    --下午旷课人数
+    
+    --下午旷课人数率
+    
+        --晚上出勤人数
+    count(
+        distinct
+        case 
+        when time_quantum = '晚上出勤' then t5_student_id
+        else null
+        end 
+    ) everning_attendance_number,
+
+    -- --晚上出勤率
+    
+    
+    -- --晚上迟到人数
+    count(
+        case 
+        when clock_state = '晚上迟到出勤' and t5_student_id_one = 1 then t5_student_id
+        else null
+        end 
+    ) everning_lated_number,
+    
+    
+    --晚上迟到率
+
+    --晚上请假人数
+    count(
+        distinct
+        case 
+        when  student_id is not null then student_id
+        else null
+        end 
+    )  everning_leave_number,
+    
+    --晚上请假率
+    
+    --晚上旷课人数
+    
+    --晚上旷课人数率
+    
+    '班级id' group_type,
+
+    --时间段
+    --clock_state,
+    max(the_year) the_year,
+    max(the_month) the_month,
+    max(the_day) the_day,
+    max(the_day) dt
+
+
+
+from temp 
+where time_quantum != '无效打卡时间' and the_day is not null
+group by class_id,class_date
+
+union all
+
+select
+    class_date,
+    --班级id
+    class_id,
+    --学生id
+    t5_student_id,
+    -- 总人数
+    null all_people,
+    
+    --time_quantum,
+    
+    --早上
+    --'早上' morning,
+    
+    --早上出勤人数
+    count(
+        distinct
+        --grouping__id = 6 为班级
+        case 
+        when  time_quantum = '早上出勤' then t5_student_id
+        else null
+        end 
+    ) morning_attendance_number,
+
+    -- --早上出勤率
+    
+    
+    -- --早上迟到人数
+    count(
+        case 
+        when clock_state = '早上迟到出勤' and t5_student_id_one = 1 then t5_student_id
+        else null
+        end 
+    ) morning_lated_number,
+    
+    
+    --早上迟到率
+
+    --早上请假人数
+    null morning_leave_number,
+    
+    --早上请假率
+    
+    --早上旷课人数
+    
+    --早上旷课人数率
+   
+       --下午出勤人数
+    count(
+        distinct
+        case 
+        when time_quantum = '下午出勤' then t5_student_id
+        else null
+        end 
+    ) afternoon_attendance_number,
+
+    -- --下午出勤率
+    
+    
+    -- --下午迟到人数
+    count(
+        case 
+        when clock_state = '下午迟到出勤' and t5_student_id_one = 1 then t5_student_id
+        else null
+        end 
+    ) afternoon_lated_number,
+    
+    
+    --下午迟到率
+
+    --下午请假人数
+    null  afternoon_leave_number,
+    
+    --下午请假率
+    
+    --下午旷课人数
+    
+    --下午旷课人数率
+    
+        --晚上出勤人数
+    count(
+        distinct
+        case 
+        when time_quantum = '晚上出勤' then t5_student_id
+        else null
+        end 
+    ) everning_attendance_number,
+
+    -- --晚上出勤率
+    
+    
+    -- --晚上迟到人数
+    count(
+        case 
+        when clock_state = '晚上迟到出勤' and t5_student_id_one = 1 then t5_student_id
+        else null
+        end 
+    ) everning_lated_number,
+    
+    
+    --晚上迟到率
+
+    --晚上请假人数
+    null  everning_leave_number,
+    
+    --晚上请假率
+    
+    --晚上旷课人数
+    
+    --晚上旷课人数率
+    
+    '学生id' group_type,
+
+    --时间段
+    --clock_state,
+    max(the_year) the_year,
+    max(the_month) the_month,
+    max(the_day) the_day,
+    max(the_day) dt
+
+
+
+from temp 
+where time_quantum != '无效打卡时间' and the_day is not null
+group by t5_student_id,class_id,class_date;

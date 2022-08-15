@@ -1,0 +1,60 @@
+ set hive.exec.dynamic.partition.mode=nonstrict;
+INSERT INTO  oe_dwd.fact_web_chat_ems_2019_07 PARTITION(dt)
+SELECT
+id   ,
+create_date_time ,
+session_id ,
+sid   ,
+create_time   ,
+seo_source   ,
+seo_keywords   ,
+ip   ,
+area   ,
+country   ,
+province   ,
+city   ,
+origin_channel   ,
+`user`   ,
+manual_time   ,
+begin_time   ,
+end_time   ,
+last_customer_msg_time_stamp   ,
+last_agent_msg_time_stamp   ,
+reply_msg_count   ,
+msg_count   ,
+browser_name   ,
+os_info   ,
+dt   
+from oe_ods.web_chat_ems_2019_07;
+
+INSERT INTO  oe_dwd.fact_web_chat_ems_2019_07 PARTITION(dt)
+SELECT
+id   ,
+create_date_time ,
+session_id ,
+sid   ,
+create_time   ,
+seo_source   ,
+seo_keywords   ,
+ip   ,
+area   ,
+country   ,
+province   ,
+city   ,
+origin_channel   ,
+`user`   ,
+manual_time   ,
+begin_time   ,
+end_time   ,
+last_customer_msg_time_stamp   ,
+last_agent_msg_time_stamp   ,
+reply_msg_count   ,
+msg_count   ,
+browser_name   ,
+os_info   ,
+dt   
+from oe_ods.web_chat_ems_2019_07
+
+    
+
+    

@@ -1,0 +1,140 @@
+-- 第16表
+INSERT INTO TABLE oe_dwd.dim_course_table_upload_detail PARTITION(dt)
+SELECT * from oe_ods.course_table_upload_detail_1;
+
+
+SELECT * from oe_dwd.dim_course_table_upload_detail;
+第13表
+INSERT OVERWRITE TABLE oe_dwd.fact_itcast_subject PARTITION(dt)
+SELECT * from oe_ods.itcast_subject;
+
+
+
+--第7表 oe_dwd.fact_tbh_student_signin_record
+INSERT INTO TABLE oe_dwd.fact_tbh_student_signin_record PARTITION (dt)
+SELECT 
+    id,
+    
+    CASE normal_class_flag
+    WHEN 1 then '正课'
+    WHEN 2 then '自习'
+    end
+    as normal_class_flag,
+    
+    time_table_id,
+    class_id,
+    student_id,
+    signin_time,
+    signin_date,
+    CASE  inner_flag
+    WHEN 0 then '外网'
+    WHEN 1 then '内网'
+    END
+    as inner_flag,
+    
+    CASE signin_type
+    WHEN 1 then '心跳打卡'
+    WHEN 2 then '老师打卡'
+    end
+    as signin_type,
+    
+    case share_state
+    WHEN 0 THEN '否'
+    WHEN 1 THEN '是'
+    end
+    as share_state,
+    inner_ip,
+    signin_date create_time,
+    dt
+from oe_ods.tbh_student_signin_record;
+
+
+
+
+--第5表 正常 oe_dwd.fact_customer_clue
+set hive.exec.dynamic.partition.mode=nonstrict;
+INSERT INTO TABLE oe_dwd.fact_customer_clue PARTITION (starts_time)
+SELECT 
+    id,
+    create_date_time,
+    update_date_time,
+    deleted,
+    customer_id,
+    customer_relationship_id,
+    session_id,
+    sid,
+    status,
+    `user`,
+    create_time,
+    platform,
+    s_name,
+    seo_source,
+    seo_keywords,
+    ip,
+    referrer,
+    from_url,
+    landing_page_url,
+    url_title,
+    to_peer,
+    manual_time,
+    begin_time,
+    reply_msg_count,
+    total_msg_count,
+    msg_count,
+    `comment`,
+    finish_reason,
+    finish_user,
+    end_time,
+    platform_description,
+    browser_name,
+    os_info,
+    area,
+    country,
+    province,
+    city,
+    creator,
+    name,
+    idcard,
+    phone,
+    itcast_school_id,
+    itcast_school,
+    itcast_subject_id,
+    itcast_subject,
+    wechat,
+    qq,
+    email,
+    gender,
+    level,
+    origin_type,
+    information_way,
+    working_years,
+    technical_directions,
+    customer_state,
+    valid,
+    anticipat_signup_date,
+    clue_state,
+    scrm_department_id,
+    superior_url,
+    superior_source,
+    landing_url,
+    landing_source,
+    info_url,
+    info_source,
+    origin_channel,
+    course_id,
+    course_name,
+    zhuge_session_id,
+    is_repeat,
+    tenant,
+    activity_id,
+    activity_name,
+    follow_type,
+    shunt_mode_id,
+    shunt_employee_group_id,
+    '9999-99-99' ends_time,
+    CASE 
+        WHEN update_date_time IS NOT NULL THEN substr(update_date_time,1,10)
+        ELSE substr(create_date_time,1,10)
+    END as starts_time
+from oe_ods.customer_clue;
+

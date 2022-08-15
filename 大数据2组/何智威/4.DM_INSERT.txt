@@ -1,0 +1,273 @@
+WITH temp AS
+(
+    SELECT 
+        *,
+        --早上出勤率
+        CASE 
+        when group_type = '班级id' 
+        then (morning_attendance_number/all_people)*100
+        ELSE NULL
+        end
+        as morning_attendance_rate,
+        
+        --早上迟到率
+        CASE 
+        when group_type = '班级id' 
+        then (morning_lated_number/all_people)*100
+        ELSE NULL
+        end
+        as morning_lated_rate,
+        
+        --早上请假率
+        CASE 
+        when group_type = '班级id' 
+        then (morning_leave_number/all_people)*100
+        ELSE NULL
+        end
+        as morning_leave_rate,
+        
+        --早上旷课人数
+        CASE 
+        when group_type = '班级id' 
+        then all_people - morning_attendance_number - morning_leave_number
+        ELSE NULL
+        end
+        as morning_truant_number,
+
+        --早上旷课率
+        CASE 
+        when group_type = '班级id' 
+        then ((all_people - morning_attendance_number - morning_leave_number)/all_people)*100
+        ELSE NULL
+        end
+        as morning_truant_rate,
+        
+        
+        --下午出勤率
+        CASE 
+        when group_type = '班级id' 
+        then (afternoon_attendance_number/all_people)*100
+        ELSE NULL
+        end
+        as afternoon_attendance_rate,
+        
+        --下午迟到率
+        CASE 
+        when group_type = '班级id' 
+        then (afternoon_lated_number/all_people)*100
+        ELSE NULL
+        end
+        as afternoon_lated_rate,
+        
+--下午请假率
+        CASE 
+        when group_type = '班级id' 
+        then (afternoon_leave_number/all_people)*100
+        ELSE NULL
+        end
+        as afternoon_leave_rate,
+        
+--下午旷课人数
+        CASE 
+        when group_type = '班级id' 
+        then all_people - afternoon_attendance_number - afternoon_leave_number
+        ELSE NULL
+        end
+        as afternoon_truant_number,
+
+--下午旷课率
+        CASE 
+        when group_type = '班级id' 
+        then ((all_people - afternoon_attendance_number - afternoon_leave_number)/all_people)*100
+        ELSE NULL
+        end
+        as afternoon_truant_rate,
+        
+        
+        
+        
+        --晚上出勤率
+        CASE 
+        when group_type = '班级id' 
+        then (everning_attendance_number/all_people)*100
+        ELSE NULL
+        end
+        as everning_attendance_rate,
+        
+        --晚上迟到率
+        CASE 
+        when group_type = '班级id' 
+        then (everning_lated_number/all_people)*100
+        ELSE NULL
+        end
+        as everning_lated_rate,
+        
+--晚上请假率
+        CASE 
+        when group_type = '班级id' 
+        then (everning_leave_number/all_people)*100
+        ELSE NULL
+        end
+        as everning_leave_rate,
+        
+--晚上旷课人数
+        CASE 
+        when group_type = '班级id' 
+        then all_people - everning_attendance_number - everning_leave_number
+        ELSE NULL
+        end
+        as everning_truant_number,
+
+--晚上旷课率
+        CASE 
+        when group_type = '班级id' 
+        then ((all_people - everning_attendance_number - everning_leave_number)/all_people)*100
+        ELSE NULL
+        end
+        as everning_truant_rate
+        
+    FROM oe_dws.attendance_theme
+)
+insert into table oe_dm.attendance_theme
+SELECT 
+    class_id,
+    null student_id,
+    --总人数
+    max(all_people) all_people,
+    
+    --早上
+    --出勤人数
+    sum(morning_attendance_number) morning_attendance_number,
+    --出勤率
+    max(morning_attendance_rate) morning_attendance_rate,
+    --迟到人数
+    sum(morning_lated_number) morning_lated_number,
+    --迟到率
+    max(morning_lated_rate) morning_lated_rate,
+    --请假人数
+    sum(morning_leave_number) morning_leave_number,
+    --请假率
+    max(morning_leave_rate) morning_leave_rate,
+    --旷课人数
+    sum(morning_truant_number) morning_truant_number,
+    --旷课率
+    max(morning_truant_rate) morning_truant_rate,
+    
+    --下午
+    --出勤人数
+    sum(afternoon_attendance_number) afternoon_attendance_number,
+    --出勤率
+    max(afternoon_attendance_rate) afternoon_attendance_rate,
+    --迟到人数
+    sum(afternoon_lated_number) afternoon_lated_number,
+    --迟到率
+    max(afternoon_lated_rate) afternoon_lated_rate,
+    --请假人数
+    sum(afternoon_leave_number) afternoon_leave_number,
+    --请假率
+    max(afternoon_leave_rate) afternoon_leave_rate,
+    --旷课人数
+    sum(afternoon_truant_number) afternoon_truant_number,
+    --旷课率
+    max(afternoon_truant_rate) afternoon_truant_rate,
+    
+    --晚上
+    --出勤人数
+    sum(everning_attendance_number) everning_attendance_number,
+    --出勤率
+    max(everning_attendance_rate) everning_attendance_rate,
+    --迟到人数
+    sum(everning_lated_number) everning_lated_number,
+    --迟到率
+    max(everning_lated_rate) everning_lated_rate,
+    --请假人数
+    sum(everning_leave_number) everning_leave_number,
+    --请假率
+    max(everning_leave_rate) everning_leave_rate,
+    --旷课人数
+    sum(everning_truant_number) everning_truant_number,
+    --旷课率
+    max(everning_truant_rate) everning_truant_rate,
+    
+    --分组类型
+    'class+day' group_type
+    the_day,
+    the_month,
+    the_year
+
+FROM temp WHERE group_type = '班级id' and all_people IS NOT NULL
+GROUP BY class_id,the_day,the_month,the_year
+
+UNION all
+
+SELECT 
+    class_id,
+    max(student_id) student_id,
+    --总人数
+    null all_people,
+    
+    --早上
+    --出勤人数
+    max(morning_attendance_number) morning_attendance_number,
+    --出勤率
+    max(morning_attendance_number * 100) morning_attendance_rate,
+    --迟到人数
+    max(morning_lated_number) morning_lated_number,
+    --迟到率
+    max(morning_lated_number * 100)  morning_lated_rate,
+    --请假人数
+    null morning_leave_number,
+    --请假率
+    null morning_leave_rate,
+    --旷课人数
+    null morning_truant_number,
+    --旷课率
+    null morning_truant_rate,
+    
+    --下午
+    --出勤人数
+    max(afternoon_attendance_number) afternoon_attendance_number,
+    --出勤率
+    max(afternoon_attendance_number * 100) afternoon_attendance_rate,
+    --迟到人数
+    max(afternoon_lated_number) afternoon_lated_number,
+    --迟到率
+    max(afternoon_lated_number * 100)  afternoon_lated_rate,
+    --请假人数
+    null afternoon_leave_number,
+    --请假率
+    null afternoon_leave_rate,
+    --旷课人数
+    null afternoon_truant_number,
+    --旷课率
+    null afternoon_truant_rate,
+    
+    --晚上
+    --出勤人数
+    max(everning_attendance_number) everning_attendance_number,
+    --出勤率
+    max(everning_attendance_number * 100) everning_attendance_rate,
+    --迟到人数
+    max(everning_lated_number) everning_lated_number,
+    --迟到率
+    max(everning_lated_number * 100)  everning_lated_rate,
+    --请假人数
+    null everning_leave_number,
+    --请假率
+    null everning_leave_rate,
+    --旷课人数
+    null everning_truant_number,
+    --旷课率
+    null everning_truant_rate,
+    
+    --分组类型
+    'student+day' group_type,
+    
+    the_day,
+    the_month,
+    the_year
+
+FROM temp WHERE group_type = '学生id' and student_id is not null 
+GROUP BY student_id,class_id,the_day,the_month,the_year;
+
+--SELECT * FROM oe_dm.attendance_theme ;

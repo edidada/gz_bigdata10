@@ -1,0 +1,84 @@
+CREATE table oe_dm.Attendance_theme(
+    class_id int COMMENT '班级id',
+    student_id int COMMENT '学生id',
+    all_people int COMMENT '总人数',
+    
+    morning_attendance_number int COMMENT '出勤人数',
+    morning_attendance_rate DECIMAL(5,2) COMMENT '出勤率',
+    morning_lated_number int COMMENT '迟到人数',
+    morning_lated_rate DECIMAL(5,2) COMMENT '迟到率',
+    morning_leave_number int COMMENT '请假人数',
+    morning_leave_rate DECIMAL(5,2) COMMENT '请假率',
+    morning_truant_number int COMMENT '旷课人数',
+    morning_truant_rate DECIMAL(5,2) COMMENT '旷课率',
+    
+    afternoon_attendance_number int COMMENT '出勤人数',
+    afternoon_attendance_rate DECIMAL(5,2) COMMENT '出勤率',
+    afternoon_lated_number int COMMENT '迟到人数',
+    afternoon_lated_rate DECIMAL(5,2) COMMENT '迟到率',
+    afternoon_leave_number int COMMENT '请假人数',
+    afternoon_leave_rate DECIMAL(5,2) COMMENT '请假率',
+    afternoon_truant_number int COMMENT '旷课人数',
+    afternoon_truant_rate DECIMAL(5,2) COMMENT '旷课率',
+    
+    everning_attendance_number int COMMENT '出勤人数',
+    everning_attendance_rate DECIMAL(5,2) COMMENT '出勤率',
+    everning_lated_number int COMMENT '迟到人数',
+    everning_lated_rate DECIMAL(5,2) COMMENT '迟到率',
+    everning_leave_number int COMMENT '请假人数',
+    everning_leave_rate DECIMAL(5,2) COMMENT '请假率',
+    everning_truant_number int COMMENT '旷课人数',
+    everning_truant_rate DECIMAL(5,2) COMMENT '旷课率',
+    
+    group_type STRING COMMENT '分组类型'
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+stored as orcfile
+TBLPROPERTIES ('orc.compress'='SNAPPY');
+
+
+
+drop table oe_dm.visit_consult_dm;
+create table if not exists oe_dm.visit_consult_dm(
+ `customer_total` INT COMMENT '聚合意向客户数',
+   `clue_nums` INT COMMENT '根据id聚合有效线索数',
+   `area` STRING COMMENT '区域信息',
+   `itcast_school_id` STRING COMMENT '校区id',
+   `itcast_school_name` STRING COMMENT '校区名称',
+   `origin_type` STRING COMMENT '来源渠道',
+   `itcast_subject_id` STRING COMMENT '学科id',
+   `itcast_subject_name` STRING COMMENT '学科名称',
+   `hourinfo` STRING COMMENT '小时信息',
+   `origin_type_stat` STRING COMMENT '数据来源:0.线下；1.线上',
+   `clue_state_stat` STRING COMMENT '客户属性：0.老客户；1.新客户',
+   `tdepart_id` STRING COMMENT '创建者部门id',
+   `tdepart_name` STRING COMMENT '咨询中心名称',
+   `time_str` STRING COMMENT '时间明细',
+   `groupType` STRING COMMENT '产品属性类别：1.总累计值；2.区域信息；3.校区、学科组合分组；4.来源渠道；5.咨询中心;',
+   `time_type` STRING COMMENT '时间维度：1、按小时聚合；2、按天聚合；3、按周聚合；4、按月聚合；5、按年聚合；',
+    yearinfo string,
+    monthinfo string,
+    dayinfo string
+)
+comment '客户意向dws表'
+PARTITIONED BY(dt string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+stored as orc
+TBLPROPERTIES ('orc.compress'='SNAPPY');
+
+CREATE table oe_dws.visit_consulting_topics(
+
+nev_day_day                 string    comment '日期',
+nev_day_city                    string    comment '城市',
+nev_day_province                string    comment '省份',
+nev_day_seo_source                  string    comment '搜索来源',
+nev_day_kh                  string    comment '访问客户量',
+nev_day_zxl             string    comment '客户咨询率',
+nev_day__c6                 string    comment '',
+nev_day_ip                  string    comment 'ip',
+nev_day_sid             string    comment   '七陌'
+)ROW format delimited fields terminated BY '\t'
+stored AS orc
+tblproperties ('orc.compress' = 'SNAPPY');
