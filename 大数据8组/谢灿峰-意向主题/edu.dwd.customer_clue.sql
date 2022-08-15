@@ -1,0 +1,201 @@
+drop table edu_dwd.fact_customer_clue;
+create table if not exists edu_dwd.fact_customer_clue
+(
+  id int COMMENT 'customer_clue_id',
+   `year` string,
+    `month` string,
+    `day` string,
+    `hour` string,
+  update_date_time STRING COMMENT '最后更新时间',
+  deleted STRING COMMENT '是否被删除（禁用）',
+  customer_id int COMMENT '客户id',
+  customer_relationship_id int COMMENT '客户关系id',
+  session_id STRING COMMENT '七陌会话id',
+  sid STRING COMMENT '访客id',
+  status STRING COMMENT '状态（undeal待领取 deal 已领取 finish 已关闭 changePeer 已流转）',
+  users STRING COMMENT '所属坐席',
+  create_time STRING COMMENT '七陌创建时间',
+  platform STRING COMMENT '平台来源 （pc-网站咨询|wap-wap咨询|sdk-app咨询|weixin-微信咨询）',
+  s_name STRING COMMENT '用户名称',
+  seo_source STRING COMMENT '搜索来源',
+  seo_keywords STRING COMMENT '关键字',
+  ip STRING COMMENT 'IP地址',
+  referrer STRING COMMENT '上级来源页面',
+  from_url STRING COMMENT '会话来源页面',
+  landing_page_url STRING COMMENT '访客着陆页面',
+  url_title STRING COMMENT '咨询页面title',
+  to_peer STRING COMMENT '所属技能组',
+  manual_time STRING COMMENT '人工开始时间',
+  begin_time STRING COMMENT '坐席领取时间 ',
+  reply_msg_count int COMMENT '客服回复消息数',
+  total_msg_count int COMMENT '消息总数',
+  msg_count int COMMENT '客户发送消息数',
+  comment STRING COMMENT '备注',
+  finish_reason STRING COMMENT '结束类型',
+  finish_user STRING COMMENT '结束坐席',
+  end_time STRING COMMENT '会话结束时间',
+  platform_description STRING COMMENT '客户平台信息',
+  browser_name STRING COMMENT '浏览器名称',
+  os_info STRING COMMENT '系统名称',
+  area STRING COMMENT '区域',
+  country STRING COMMENT '所在国家',
+  province STRING COMMENT '省',
+  city STRING COMMENT '城市',
+  creator int COMMENT '创建人',
+  name STRING COMMENT '客户姓名',
+  idcard STRING COMMENT '身份证号',
+  phone STRING COMMENT '手机号',
+  itcast_school_id int COMMENT '校区Id',
+  itcast_school STRING COMMENT '校区',
+  itcast_subject_id int COMMENT '学科Id',
+  itcast_subject STRING COMMENT '学科',
+  wechat STRING COMMENT '微信',
+  qq STRING COMMENT 'qq号',
+  email STRING COMMENT '邮箱',
+  gender STRING COMMENT '性别',
+  level STRING COMMENT '客户级别',
+  origin_type STRING COMMENT '数据来源渠道',
+  information_way STRING COMMENT '资讯方式',
+  working_years STRING COMMENT '开始工作时间',
+  technical_directions STRING COMMENT '技术方向',
+  customer_state STRING COMMENT '当前客户状态',
+  valid STRING COMMENT '该线索是否是网资有效线索',
+  anticipat_signup_date STRING COMMENT '预计报名时间',
+  clue_state STRING COMMENT '线索状态',
+  scrm_department_id int COMMENT 'SCRM内部部门id',
+  superior_url STRING COMMENT '诸葛获取上级页面URL',
+  superior_source STRING COMMENT '诸葛获取上级页面URL标题',
+  landing_url STRING COMMENT '诸葛获取着陆页面URL',
+  landing_source STRING COMMENT '诸葛获取着陆页面URL来源',
+  info_url STRING COMMENT '诸葛获取留咨页URL',
+  info_source STRING COMMENT '诸葛获取留咨页URL标题',
+  origin_channel STRING COMMENT '投放渠道',
+  course_id int COMMENT '课程编号',
+  course_name STRING COMMENT '课程名称',
+  zhuge_session_id STRING COMMENT 'zhuge会话id',
+  is_repeat int COMMENT '是否重复线索(手机号维度) 0:正常 1：重复',
+  tenant int COMMENT '租户id',
+  activity_id STRING COMMENT '活动id',
+  activity_name STRING COMMENT '活动名称',
+  follow_type int COMMENT '分配类型，0-自动分配，1-手动分配，2-自动转移，3-手动单个转移，4-手动批量转移，5-公海领取',
+  shunt_mode_id int COMMENT '匹配到的技能组id',
+  shunt_employee_group_id int COMMENT '所属分流员工组',
+  ends_time string
+  )comment '客户关系表'
+partitioned by (start_time string)
+clustered by (customer_relationship_id) sorted by (customer_relationship_id) into 10 buckets
+row format delimited fields terminated by '\t'
+stored as orc tblproperties('orc.compress'='SNAPPY');
+
+
+
+insert into edu_dwd.fact_customer_clue partition (start_time)
+select 
+    id ,
+    year(create_date_time)  yearinfo,
+    month(create_date_time) monthinfo,
+    day(create_date_time) dayinfo,
+    hour(create_date_time) hourinfo,
+    update_date_time ,
+    deleted ,
+    customer_id ,
+    customer_relationship_id ,
+    session_id ,
+    sid ,
+    status ,
+    `user` ,
+    create_time ,
+    platform ,
+    s_name ,
+    seo_source ,
+    seo_keywords ,
+    ip ,
+    referrer ,
+    from_url ,
+    landing_page_url ,
+    url_title ,
+    to_peer ,
+    manual_time ,
+    begin_time ,
+    reply_msg_count ,
+    total_msg_count ,
+    msg_count ,
+    `comment` ,
+    finish_reason ,
+    finish_user ,
+    end_time ,
+    platform_description ,
+    browser_name ,
+    os_info ,
+    area ,
+    country ,
+    province ,
+    city ,
+    creator ,
+    name ,
+    idcard ,
+    phone ,
+    
+    if(itcast_school_id = 0 or itcast_school_id is null,-1,
+    itcast_school_id)
+    as itcast_school_id
+    ,
+    
+    itcast_school ,
+    case 
+    when itcast_subject_id = 0
+    then -1
+    when itcast_subject_id is null
+    then -1
+    else itcast_subject_id
+    end as
+    itcast_subject_id
+    ,
+    
+    itcast_subject ,
+    wechat ,
+    qq ,
+    email ,
+    gender ,
+    level ,
+    origin_type ,
+    information_way ,
+    working_years ,
+    technical_directions ,
+    customer_state ,
+    valid ,
+    anticipat_signup_date ,
+    
+    case clue_state 
+    when 'VALID_NEW_CLUES'
+    then '新客户'
+    when 'VALID_PUBLIC_NEW_CLUE'
+    then '老客户'
+    else '无效客户'
+    end as clue_state_stat
+    ,
+    scrm_department_id ,
+    superior_url ,
+    superior_source ,
+    landing_url ,
+    landing_source ,
+    info_url ,
+    info_source ,
+    origin_channel ,
+    course_id ,
+    course_name ,
+    zhuge_session_id ,
+    is_repeat ,
+    tenant ,
+    activity_id ,
+    activity_name ,
+    follow_type ,
+    shunt_mode_id ,
+    shunt_employee_group_id,
+    '9999-99-99' ends_time,
+    if(update_date_time is not null and update_date_time !='',
+    substring(update_date_time,1,10),
+    substring(create_time,1,10)) as
+    start_time 
+
+from edu_ods.customer_clue;
