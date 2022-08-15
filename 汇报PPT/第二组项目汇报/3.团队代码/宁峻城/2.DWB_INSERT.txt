@@ -1,0 +1,43 @@
+--日+城市
+WITH dws_nev_day as 
+(
+-- explain
+    select
+       
+        substr(ov.create_date_time,1,10) day, --日
+    
+--地区维度
+
+        substr(ov.area,1,8) city,                     --城市                    
+        substr(ov.area,1,6) province,                     --省份
+        ov.seo_source,                           --搜索来源
+--判断用字段
+        count(ov.create_date_time) kh,                 --访客客户量
+        count(ov.begin_time)/count(ov.create_date_time) zxl ,--客户咨询率
+        CASE 
+            when ov.seo_source = '百度搜索'
+            then count('百度搜索')/count(ov.seo_source)  --百度搜索的访问占比
+            WHEN ov.seo_source = '其他网站'
+            THEN count('其他网站')/count(ov.seo_source)  --其他网站的访问占比
+            WHEN ov.seo_source = '站内'
+            THEN count('站内')/count(ov.seo_source)      --站内的访问占比
+            WHEN ov.seo_source = ('360搜索')
+            then count('360搜索')/count(ov.seo_source)     --360搜索的访问占比
+            WHEN ov.seo_source = '搜狗搜索'
+            then count('搜狗搜索')/count(ov.seo_source)    --搜狗的访问占比
+        end,
+            
+        count(distinct ov.ip) ip,                  --ip去重
+        count(distinct ov.session_id) sid           --sessinion_id去重
+
+    from oe_dwb.nev as ov
+GROUP BY substr(ov.create_date_time,1,10),
+         substr(ov.area,1,8),
+         substr(ov.area,1,6),
+         ov.seo_source
+
+)
+INSERT into table oe_dws.visit_consulting_topics -- PARTITION (dt ='2022-08-13')
+
+SELECT* FROM dws_nev_day ORDER BY kh desc
+;

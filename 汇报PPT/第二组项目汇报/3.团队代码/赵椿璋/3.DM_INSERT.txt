@@ -1,0 +1,109 @@
+set hive.new.job.grouping.set.cardinality = 32;
+set hive.exec.dynamic.partition=true;
+set hive.exec.dynamic.partition.mode=nonstrict;
+
+-- hive压缩
+set hive.exec.compress.intermediate=true;
+set hive.exec.compress.output=true;
+-- 写入时压缩生效
+set hive.exec.orc.compression.strategy=COMPRESSION;
+-- 写入数据强制分桶
+set hive.enforce.bucketing=true;
+-- 开启强制排序
+set hive.enforce.sorting=true;
+
+set hive.auto.convert.join=true;
+-- smb
+set hive.enforce.bucketing=true; 
+set hive.enforce.sorting=true; 
+set hive.optimize.bucketmapjoin = true;
+set hive.auto.convert.sortmerge.join=true;
+set hive.auto.convert.sortmerge.join.noconditionaltask=true;
+set hive.optimize.bucketmapjoin.sortedmerge = true;
+insert overwrite table oe_dm.visit_consult_dm partition(dt)
+select
+    count(distinct customer_id) as customer_total,
+    count(distinct if(clue_appeal_state="无效",customer_id, null)) as clue_nums,
+    area,
+    max(itcast_school_id) itcast_school_id,
+    itcast_school_name,
+    origin_type,
+    max(itcast_subject_id) itcast_subject_id,
+    itcast_subject_name,
+    hourinfo,
+    origin_type_stat,
+    clue_state_stat,
+    null as tdepart_id,
+    tdepart_name,
+    null as time_str,
+    case
+    when grouping__id in (15, 31, 47, 79, 143,271,527,1039)
+    then '小时'
+    when grouping__id in (7,23, 39, 71, 135, 263,519,1031)
+    then '日'
+    when grouping__id in (3,19, 35, 67, 131, 259,515,1027)
+    then '月'
+    when grouping__id in (1, 17, 33, 65, 129,257,513,1025)
+    then '年'
+  end
+  as time_type, 
+  case
+    when grouping__id in (15,7,3,1)
+    then 'all'
+    when grouping__id in (31,23,19,17)
+    then '地区'
+    when grouping__id in (47,39,35,33)
+    then '校区名称'
+    when grouping__id in (79,71,67,65)
+    then '学科名称'
+    when grouping__id in (143,135,131,129)
+    then '来源渠道'
+    when grouping__id in (271,263,259,257)
+    then '咨询中心名称'
+    when grouping__id in (527,519,515,513)
+    then '客户来源'
+    when grouping__id in (1039, 1031, 1027, 1025)
+    then '客户属性'
+
+  end
+  as group_type, 
+    yearinfo,
+    monthinfo,
+    dayinfo,
+    "2022-03-12" as dt
+from oe_dwb.scrm_zcz
+group by yearinfo,monthinfo,dayinfo,hourinfo,area,itcast_school_name,itcast_subject_name,origin_type,tdepart_name, origin_type_stat,clue_state_stat
+grouping sets (
+    (yearinfo,monthinfo,dayinfo,hourinfo),
+    (yearinfo,monthinfo,dayinfo),
+    (yearinfo,monthinfo),
+    (yearinfo),
+    (area,yearinfo,monthinfo,dayinfo,hourinfo),
+    (area,yearinfo,monthinfo,dayinfo),
+    (area,yearinfo,monthinfo),
+    (area,yearinfo),
+    (itcast_school_name,yearinfo,monthinfo,dayinfo,hourinfo),
+    (itcast_school_name,yearinfo,monthinfo,dayinfo),
+    (itcast_school_name,yearinfo,monthinfo),
+    (itcast_school_name,yearinfo),
+    (itcast_subject_name,yearinfo,monthinfo,dayinfo,hourinfo),
+    (itcast_subject_name,yearinfo,monthinfo,dayinfo),
+    (itcast_subject_name,yearinfo,monthinfo),
+    (itcast_subject_name,yearinfo),
+    (origin_type,yearinfo,monthinfo,dayinfo,hourinfo),
+    (origin_type,yearinfo,monthinfo,dayinfo),
+    (origin_type,yearinfo,monthinfo),
+    (origin_type,yearinfo),
+    (tdepart_name,yearinfo,monthinfo,dayinfo,hourinfo),
+    (tdepart_name,yearinfo,monthinfo,dayinfo),
+    (tdepart_name,yearinfo,monthinfo),
+    (tdepart_name,yearinfo),
+    (origin_type_stat,yearinfo,monthinfo,dayinfo,hourinfo),
+    (origin_type_stat,yearinfo,monthinfo,dayinfo),
+    (origin_type_stat,yearinfo,monthinfo),
+    (origin_type_stat,yearinfo),
+    (clue_state_stat,yearinfo,monthinfo,dayinfo,hourinfo),
+    (clue_state_stat,yearinfo,monthinfo,dayinfo),
+    (clue_state_stat,yearinfo,monthinfo),
+    (clue_state_stat,yearinfo)
+);

@@ -1,0 +1,80 @@
+-- 分区
+SET hive.exec.dynamic.partition=true;
+SET hive.exec.dynamic.partition.mode=nonstrict;
+
+-- 维度
+-- oe_dwd.dim_employee(员工信息表)
+insert overwrite table oe_dwd.dim_employee PARTITION(dt )
+select
+    id,
+    email,
+    real_name,
+    phone,
+    department_id,
+    department_name,
+    remote_login,
+    job_number,
+    cross_school,
+    last_login_date,
+    creator,
+    create_date_time,
+    update_date_time,
+    deleted,
+    scrm_department_id,
+    leave_office,
+    leave_office_time,
+    reinstated_time,
+    superior_leaders_id,
+    tdepart_id,
+    tenant,
+    ems_user_name,
+    dt
+from oe_ods.employee;
+
+
+-- 部门表
+--oe_dwd.dim_scrm_department PARTITION(dt )
+insert overwrite table oe_dwd.dim_scrm_department PARTITION (dt)
+select
+    id,
+    name,
+    parent_id,
+    create_date_time,
+    update_date_time,
+    deleted,
+    id_path,
+    tdepart_code,
+    creator,
+    depart_level,
+    depart_sign,
+    depart_line,
+    depart_sort,
+    disable_flag,
+    tenant,
+    dt
+from oc_ods.scrm_department ;
+
+
+-- 课程报名表
+insert overwrite table oe_dwd.dim_itcast_clazz PARTITION(dt )
+select
+    id                  ,
+    create_date_time    ,
+    update_date_time    ,
+    deleted             ,
+    itcast_school_id    ,
+    itcast_school_name  ,
+    itcast_subject_id   ,
+    itcast_subject_name ,
+    itcast_brand        ,
+    clazz_type_state    ,
+    clazz_type_name     ,
+    teaching_mode       ,
+    start_time          ,
+    end_time            ,
+    comment             ,
+    detail              ,
+    uncertain           ,
+    tenant              ,
+    dt
+from oe_ods.itcast_clazz ;

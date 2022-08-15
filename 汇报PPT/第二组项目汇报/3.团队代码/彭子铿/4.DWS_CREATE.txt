@@ -1,0 +1,44 @@
+CREATE table oe_dws.Attendance_theme(
+    class_date STRING COMMENT '课程日期',
+    class_id int COMMENT '班级id',
+    student_id int COMMENT '学生id',
+    all_people int COMMENT '总人数',
+    morning_attendance_number int COMMENT '早上出勤人数',
+    morning_lated_number int COMMENT '早上迟到人数',
+    morning_leave_number int COMMENT '早上请假人数',
+    afternoon_attendance_number int COMMENT '下午出勤人数',
+    afternoon_lated_number int COMMENT '下午迟到人数',
+    afternoon_leave_number int COMMENT '下午请假人数',
+    everning_attendance_number int COMMENT '晚上出勤人数',
+    everning_lated_number int COMMENT '晚上迟到人数',
+    everning_leave_number int COMMENT '晚上请假人数',
+    group_type STRING COMMENT '分组类型',
+    the_year string COMMENT '年',
+    the_month string COMMENT '月',
+    the_day string COMMENT '日'
+)
+PARTITIONED BY (dt STRING)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+stored as orcfile
+TBLPROPERTIES ('orc.compress'='SNAPPY');
+
+DROP TABLE oe_dws.Attendance_theme;
+
+
+CREATE table oe_dws.visit_consulting_topics(
+
+nev_day_day                 string    comment '日期',
+nev_day_city                    string    comment '城市',
+nev_day_province                string    comment '省份',
+nev_day_seo_source                  string    comment '搜索来源',
+nev_day_kh                  string    comment '访问客户量',
+nev_day_zxl             string    comment '客户咨询率',
+nev_day__c6                 string    comment '',
+nev_day_ip                  string    comment 'ip',
+nev_day_sid             string    comment   '七陌'
+)ROW format delimited fields terminated BY '\t'
+stored AS orc
+tblproperties ('orc.compress' = 'SNAPPY');
+
+

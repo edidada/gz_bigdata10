@@ -1,0 +1,218 @@
+CREATE table oe_dwb.teach_final(
+    --1 dim_course_table_upload_detail
+    id int,
+    base_id int,
+    -- 与表3关联字段1 与表4关联字段1 -- 与表5关联字段1
+    class_id int,
+    -- 与表2关联字段 -- 与表3关联字段2 -- 与表4关联字段2  -- 与表5关联字段2
+    class_date string,
+    content string,
+    teacher_id int,
+    teacher_name string,
+    job_number string,
+    classroom_id int,
+    classroom_name string,
+    is_outline int,
+    class_mode int,
+    is_stage_exam int,
+    is_pay int,
+    tutor_teacher_id int,
+    tutor_teacher_name string,
+    tutor_job_number string,
+    is_subsidy int,
+    answer_teacher_id int,
+    answer_teacher_name string,
+    answer_job_number string,
+    remark string,
+    create_time string,
+    
+    --2 dim_tbh_class_time_table
+    -- 与表5关联字段1
+    t2_id int,
+    --class_id int,
+    morning_template_id int,
+    morning_begin_time string,
+    morning_end_time string,
+    afternoon_template_id int,
+    afternoon_begin_time string,
+    afternoon_end_time string,
+    evening_template_id int,
+    evening_begin_time string,
+    evening_end_time string,
+    -- 与表1关联字段
+    use_begin_date date,
+    -- 与表1关联字段
+    use_end_date date,
+    t2_create_time string,
+    create_person int,
+    t2_remark string,
+    
+    --3 dim_class_studying_student_count
+    school_id int,
+    subject_id int,
+    -- 与表1关联字段1
+    --class_id int,
+    studying_student_count int,
+    -- 与表1关联字段2
+    studying_date string,
+    
+    --4 fact_student_leave_apply
+    -- 与表4关联字段1 与表2关联字段1
+    --class_id int,
+    student_id int,
+    audit_state int,
+    audit_person int,
+    audit_time string,
+    audit_remark string,
+    leave_type int,
+    leave_reason int,
+    -- 与表4关联字段2 --与表2关联字段2
+    begin_time string,
+    begin_time_type int,
+    -- 与表4关联字段2 --与表2关联字段2
+    end_time string,
+    end_time_type int,
+    days decimal(36,2),
+    cancel_state int,
+    cancel_time string,
+    old_leave_id int,
+    leave_remark string,
+    valid_state int,
+    t4_create_time string,
+    
+    --5 fact_tbh_student_signin_record
+    normal_class_flag string,
+    -- 与表2关联字段1
+    time_table_id int,
+    -- 与表5关联字段1
+    --class_id int,
+    t5_student_id int,
+    -- 与表5关联字段2
+    signin_time string,
+    signin_date string,
+    inner_flag string,
+    signin_type string,
+    share_state string,
+    inner_ip string,
+    t5_create_time string
+    
+    
+) PARTITIONED BY (dt STRING)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+stored as orcfile
+TBLPROPERTIES ('orc.compress'='SNAPPY');
+
+
+
+DROP table oe_dwb.`scrm_zcz`;
+CREATE TABLE IF NOT EXISTS oe_dwb.`scrm_zcz` (
+    -- 客户意向表
+    `customer_id` STRING COMMENT 'id信息',
+    `create_date_time` STRING COMMENT '创建时间',
+    -- 客户线索表
+    `area` STRING COMMENT '区域信息',
+    -- 报名课程表
+    `itcast_school_id` STRING COMMENT '校区id',
+    `itcast_school_name` STRING COMMENT '校区名称',
+    `itcast_subject_id` STRING COMMENT '学科id',
+    `itcast_subject_name` STRING COMMENT '学科名称',
+    `hourinfo` STRING COMMENT '小时信息',
+    -- 客户线索表
+    `origin_type` STRING COMMENT '来源渠道',
+    
+    `origin_type_stat` STRING COMMENT '数据来源:0.线下；1.线上',
+    `clue_state_stat` STRING COMMENT '新老客户：0.老客户；1.新客户',
+    -- 线索申诉
+    clue_appeal_state STRING COMMENT '是否有效线索: 0 有效 1无效',
+    -- 部门表
+    `tdepart_id` STRING COMMENT '创建者部门id',
+    `tdepart_name` STRING COMMENT '部门名称',
+     yearinfo STRING,
+     monthinfo STRING, 
+     dayinfo STRING
+)
+comment '客户意向dwm表'
+PARTITIONED BY(dt STRING)
+clustered by(customer_id) sorted by(customer_id) into 10 buckets
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+stored as ORC
+TBLPROPERTIES ('orc.compress'='SNAPPY');    
+
+
+-- 建表
+drop table if exists dwb.scrm_daoming;
+create table if not exists dwb.scrm_daoming(
+    id int,
+    customer_id int,
+    create_date_time timestamp,
+    itcast_school_id int,
+    itcast_subject_id int,
+    origin_type string,
+
+    id int,
+    itcast_school_id string,
+    itcast_school_name string,
+    itcast_subject_id string,
+    itcast_subject_name string,
+
+    id int,
+    customer_relationship_first_id int,
+    appeal_status int,
+
+    id int,
+    tdepart_id int,
+    department_id string,
+
+    id int,
+    name string,
+
+    id int,
+    customer_relationship_id int,
+    clue_state string,
+    deleted int,
+    create_date_time timestamp
+
+
+)comment '报名用户宽表'
+partition by'dt string'
+stored as orc
+tblproperties ('orc.compress' = 'SNAPPY');
+
+create table oe_dwb.nev(   
+   id                               int                 comment'主键',
+   create_date_time                 string              comment'数据创建时间',
+   session_id                       string              comment'七陌sessionId',
+   sid                              string              comment'访客id',
+   create_time                      string              comment'会话创建时间',
+   seo_source                       string              comment'搜索来源',
+   seo_keywords                     string              comment'关键字',
+   ip                               string              comment'IP地址',
+   area                             string              comment'地域',
+   country                          string              comment'所在国家',
+   province                         string              comment'省',
+   city                             string              comment'城市',
+   origin_channel                   string              comment'投放渠道',
+   `user`                           string                          ,
+   manual_time                      string              comment'人工时间',
+   begin_time                       string              comment'坐席领取时间',
+   end_time                         string              comment'会话结束时间',
+   last_customer_msg_time_stamp     string              comment'客户最后一条信息的时间',
+   last_agent_msg_time_stamp        string              comment'坐席最后一下回复时间',
+   reply_msg_count                  int                 comment'客户回复消息数',
+   msg_count                        int                 comment'客户发送信息数',
+   browser_name                     string              comment'浏览器名称',
+   os_info                          string              comment'系统名称',
+   referrer                         string              comment '上级来源页面',
+   from_url                         string              comment '会话来源页面',
+   landing_page_url                 string              comment '访客着陆页面',
+   url_title                        string              comment '咨询页面title',
+   platform_description             string              comment '客户平台信息',
+   other_params                     string              comment '扩展字段中数据',
+   history                          string              comment '历史访问记录'
+)PARTITIONED BY(dt STRING)
+row format delimited fields terminated by '\t'
+stored as orc
+tblproperties ('orc.compress' = 'SNAPPY');
+--插入表数据

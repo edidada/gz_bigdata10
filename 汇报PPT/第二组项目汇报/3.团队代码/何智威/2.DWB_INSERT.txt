@@ -1,0 +1,245 @@
+INSERT into table oe_dwb.teach_final PARTITION(dt)
+SELECT
+  upl.id,
+  upl.base_id,
+  -- 与表3关联字段1 与表4关联字段1 -- 与表5关联字段1
+  upl.class_id,
+  -- 与表2关联字段 -- 与表3关联字段2 -- 与表4关联字段2  -- 与表5关联字段2
+  upl.class_date,
+  upl.content,
+  upl.teacher_id,
+  upl.teacher_name,
+  upl.job_number,
+  upl.classroom_id,
+  upl.classroom_name,
+  upl.is_outline,
+  upl.class_mode,
+  upl.is_stage_exam,
+  upl.is_pay,
+  upl.tutor_teacher_id,
+  upl.tutor_teacher_name,
+  upl.tutor_job_number,
+  upl.is_subsidy,
+  upl.answer_teacher_id,
+  upl.answer_teacher_name,
+  upl.answer_job_number,
+  upl.remark,
+  upl.create_time,
+  
+  
+  ti.id t2_id,
+  --class_id int,
+  ti.morning_template_id,
+  ti.morning_begin_time,
+  ti.morning_end_time,
+  ti.afternoon_template_id,
+  ti.afternoon_begin_time,
+  ti.afternoon_end_time,
+  ti.evening_template_id,
+  ti.evening_begin_time,
+  ti.evening_end_time,
+  -- 与表1关联字段
+  ti.use_begin_date,
+  -- 与表1关联字段
+  ti.use_end_date,
+  ti.create_time t2_create_time,
+  ti.create_person ,
+  ti.remark t2_remark,
+  
+  
+  --3 dim_class_studying_student_count
+  stuc.school_id,
+  stuc.subject_id,
+  -- 与表1关联字段1
+  --class_id int,
+  stuc.studying_student_count,
+  -- 与表1关联字段2
+  stuc.studying_date,
+ 
+-- --      --4 fact_student_leave_apply
+--   -- 与表4关联字段1 与表2关联字段1
+  --class_id int,
+  lea.student_id,
+  lea.audit_state,
+  lea.audit_person,
+  lea.audit_time,
+  lea.audit_remark,
+  lea.leave_type,
+  lea.leave_reason,
+  -- 与表4关联字段2 --与表2关联字段2
+  lea.begin_time,
+  lea.begin_time_type,
+  -- 与表4关联字段2 --与表2关联字段2
+  lea.end_time,
+  lea.end_time_type,
+  lea.days,
+  lea.cancel_state,
+  lea.cancel_time,
+  lea.old_leave_id,
+  lea.leave_remark,
+  lea.valid_state,
+  lea.create_time t4_create_time,
+  
+  null as normal_class_flag,
+  null as time_table_id,
+  null as student_id,
+  null as signin_time,
+  null as signin_date,
+  null as inner_flag,
+  null as signin_type,
+  null as share_state,
+  null as inner_ip,
+  null as create_time,
+  
+  
+--   --分区字段
+  stuc.dt
+
+FROM oe_dwd.dim_course_table_upload_detail as upl
+    --2790
+    
+    left JOIN oe_dwd.dim_class_studying_student_count stuc on (stuc.class_id = upl.class_id) and (stuc.studying_date = upl.class_date) 
+    left join oe_dwd.dim_tbh_class_time_table ti on ti.class_id = upl.class_id
+    LEFT JOIN oe_dwd.fact_student_leave_apply lea on (lea.class_id = upl.class_id) 
+
+WHERE
+    (upl.class_date >= ti.use_begin_date ) and (upl.class_date <= ti.use_end_date) 
+    and (class_date >= substr(begin_time,1,10)) and (class_date <= substr(end_time,1,10)) 
+    and (ti.morning_begin_time >= substr(begin_time,12,8)) and (ti.morning_begin_time <= substr(end_time,12,8))
+    
+UNION ALL
+
+SELECT
+    upl.id,
+    upl.base_id,
+    -- 与表3关联字段1 与表4关联字段1 -- 与表5关联字段1
+    upl.class_id,
+    -- 与表2关联字段 -- 与表3关联字段2 -- 与表4关联字段2  -- 与表5关联字段2
+    upl.class_date,
+    upl.content,
+    upl.teacher_id,
+    upl.teacher_name,
+    upl.job_number,
+    upl.classroom_id,
+    upl.classroom_name,
+    upl.is_outline,
+    upl.class_mode,
+    upl.is_stage_exam,
+    upl.is_pay,
+    upl.tutor_teacher_id,
+    upl.tutor_teacher_name,
+    upl.tutor_job_number,
+    upl.is_subsidy,
+    upl.answer_teacher_id,
+    upl.answer_teacher_name,
+    upl.answer_job_number,
+    upl.remark,
+    upl.create_time,
+    
+    
+    ti.id t2_id,
+    --class_id int,
+    ti.morning_template_id,
+    ti.morning_begin_time,
+    ti.morning_end_time,
+    ti.afternoon_template_id,
+    ti.afternoon_begin_time,
+    ti.afternoon_end_time,
+    ti.evening_template_id,
+    ti.evening_begin_time,
+    ti.evening_end_time,
+    -- 与表1关联字段
+    ti.use_begin_date,
+    -- 与表1关联字段
+    ti.use_end_date,
+    ti.create_time t2_create_time,
+    ti.create_person ,
+    ti.remark t2_remark,
+    
+    
+    --3 dim_class_studying_student_count
+    stuc.school_id,
+    stuc.subject_id,
+    -- 与表1关联字段1
+    --class_id int,
+    stuc.studying_student_count,
+    -- 与表1关联字段2
+    stuc.studying_date,
+    
+    null as student_id,
+    null as audit_state,
+    null as audit_person,
+    null as audit_time,
+    null as audit_remark,
+    null as leave_type,
+    null as leave_reason,
+    null as begin_time,
+    null as begin_time_type,
+    null as end_time,
+    null as end_time_type,
+    null as days,
+    null as cancel_state,
+    null as cancel_time,
+    null as old_leave_id,
+    null as leave_remark,
+    null as valid_state,
+    null as t4_create_time,
+    
+      --5
+    normal_class_flag,
+    time_table_id,
+    sig.student_id,
+    signin_time,
+    signin_date,
+    inner_flag,
+    signin_type,
+    share_state,
+    inner_ip,
+    sig.create_time,
+    
+    
+       --分区字段
+    stuc.dt     
+FROM oe_dwd.dim_course_table_upload_detail as upl
+    --2790
+    
+    left JOIN oe_dwd.dim_class_studying_student_count stuc on (stuc.class_id = upl.class_id) and (stuc.studying_date = upl.class_date) 
+    left join oe_dwd.dim_tbh_class_time_table ti on ti.class_id = upl.class_id
+    JOIN oe_dwd.fact_tbh_student_signin_record sig
+        ON upl.class_id = sig.class_id and upl.class_date = sig.signin_date and ti.id = sig.time_table_id
+WHERE
+    (upl.class_date >= ti.use_begin_date ) and (upl.class_date <= ti.use_end_date) ;
+    
+
+
+
+
+
+
+
+
+-- -- web_chat_ems
+-- -- 动态分区配置
+-- set hive.exec.dynamic.partition=true;
+-- set hive.exec.dynamic.partition.mode=nonstrict;
+
+-- -- hive压缩
+-- set hive.exec.compress.intermediate=true;
+-- set hive.exec.compress.output=true;
+-- -- 写入时压缩生效
+-- set hive.exec.orc.compression.strategy=COMPRESSION;
+-- -- 写入数据强制分桶
+-- set hive.enforce.bucketing=true;
+-- -- 开启强制排序
+-- set hive.enforce.sorting=true;
+
+-- set hive.auto.convert.join=true;
+-- -- smb
+-- set hive.enforce.bucketing=true; 
+-- set hive.enforce.sorting=true; 
+-- set hive.optimize.bucketmapjoin = true;
+-- set hive.auto.convert.sortmerge.join=true;
+-- set hive.auto.convert.sortmerge.join.noconditionaltask=true;
+-- set hive.optimize.bucketmapjoin.sortedmerge = true;
+
+-- drop TABLE oe_dwb.teach_12
